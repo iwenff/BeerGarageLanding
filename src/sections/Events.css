@@ -361,27 +361,6 @@
   letter-spacing: -0.01em;
 }
 
-/* --- Dual layout: text + secondary image (for sports/video type) --- */
-.emodal__layout--dual {
-  display: grid;
-  grid-template-columns: 1fr 180px;
-  gap: 20px;
-  align-items: start;
-}
-.emodal__dual-left {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-.emodal__side-img {
-  width: 100%;
-  aspect-ratio: 3 / 4;
-  object-fit: cover;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--line-2);
-  box-shadow: var(--shadow);
-}
-
 .emodal__desc {
   color: var(--muted);
   line-height: 1.65;
@@ -544,40 +523,30 @@
 }
 
 @media (max-width: 600px) {
-  /* modal nearly full screen on mobile */
-  .emodal-overlay { padding: 0; align-items: flex-end; }
+  /* modal centered on mobile, comfortable side gutters */
+  .emodal-overlay { padding: 16px; align-items: center; }
   .emodal {
     max-width: 100%;
-    max-height: 92vh;
-    border-bottom-left-radius: 0;
-    border-bottom-right-radius: 0;
-    animation: emd-in-mobile 0.35s cubic-bezier(.2,.8,.2,1);
+    max-height: 88vh;
+    border-radius: var(--radius);
   }
-  @keyframes emd-in-mobile {
-    from { opacity: 0; transform: translateY(30px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-  .emodal__close { top: 14px; right: 14px; position: absolute; }
-  .emodal__content { padding: 18px 20px 28px; }
-  .emodal__title { font-size: clamp(1.9rem, 8vw, 2.6rem); }
-
-  /* Sports dual layout: stack on mobile */
-  .emodal__layout--dual {
-    grid-template-columns: 1fr;
-  }
-  .emodal__side-img {
-    aspect-ratio: 16 / 9;
-    order: -1; /* photo above text on mobile */
-  }
+  .emodal__close { top: 12px; right: 12px; position: absolute; }
+  .emodal__content { padding: 18px 18px 24px; gap: 13px; }
+  .emodal__title { font-size: clamp(1.8rem, 8vw, 2.4rem); }
+  .emodal__desc { font-size: 14px; }
 
   .emodal__booking-btns { flex-direction: column; }
   .emodal__booking-btns .ecard__mini-btn { padding: 14px; }
+
+  /* media tabs a touch smaller so they fit thumbs */
+  .emodal__media-tabs button { padding: 8px 14px; font-size: 11px; }
 
   .ecard { width: 256px; }
   .ecard__media { height: 170px; }
 }
 
 @media (max-width: 390px) {
+  .emodal-overlay { padding: 12px; }
   .ecard { width: 230px; }
   .ecard__media { height: 155px; }
 }

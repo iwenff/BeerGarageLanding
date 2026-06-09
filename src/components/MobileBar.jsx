@@ -6,7 +6,7 @@ export default function MobileBar({ onMaxClick }) {
   return (
     <div className="mbar">
       <a className="mbar__btn mbar__btn--wa" href={LINKS.whatsapp} target="_blank" rel="noopener noreferrer">
-        <WhatsAppIcon /> Вацап
+        <WhatsAppIcon /> WhatsApp
       </a>
       <button className="mbar__btn mbar__btn--max" onClick={onMaxClick} type="button">
         <MaxIcon /> Макс

@@ -45,7 +45,7 @@ export default function MaxModal({ onClose }) {
             Позвонить
           </a>
           <a className="mmodal__btn mmodal__btn--wa" href={LINKS.whatsapp} target="_blank" rel="noopener noreferrer">
-            Или в Вацап
+            Или в WhatsApp
           </a>
         </div>
       </div>

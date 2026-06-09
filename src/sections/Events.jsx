@@ -123,7 +123,7 @@ function EventModal({ event, onClose, onMaxClick }) {
               <span className="emodal__booking-label">Для бронирования обращайтесь</span>
               <div className="emodal__booking-btns">
                 <a className="ecard__mini-btn ecard__mini-btn--wa" href={LINKS.whatsapp} target="_blank" rel="noopener noreferrer">
-                  <WhatsAppIcon /> Написать в Вацап
+                  <WhatsAppIcon /> Написать в WhatsApp
                 </a>
                 <button className="ecard__mini-btn ecard__mini-btn--max" onClick={() => { onClose(); onMaxClick() }} type="button">
                   <MaxIcon /> Написать в Макс
