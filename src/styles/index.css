@@ -65,6 +65,17 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 
 .section { position: relative; padding: clamp(70px, 11vw, 150px) 0; }
 
+/* плавный фейд поверх границы секции сверху */
+.section--fade-top::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 90px;
+  background: linear-gradient(180deg, var(--fade-from, var(--bg)) 0%, transparent 100%);
+  pointer-events: none;
+  z-index: 2;
+}
+
 .eyebrow {
   display: inline-flex; align-items: center; gap: 10px;
   font-family: var(--font-display);
@@ -102,10 +113,41 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .blob {
   position: absolute;
   border-radius: 50%;
-  filter: blur(90px);
+  filter: blur(120px);
   opacity: 0.5;
   pointer-events: none;
   z-index: 0;
+}
+
+/* ======================================================
+   ГЛОБАЛЬНЫЕ AMBIENT-БЛОБЫ
+   Фиксированные, z-index: -1 — всегда за всеми секциями.
+   Создают непрерывное свечение через прозрачные секции.
+   ====================================================== */
+.page-glow {
+  position: fixed;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: -1;
+  will-change: transform;
+}
+.page-glow--left {
+  width: clamp(350px, 45vw, 700px);
+  height: clamp(350px, 45vw, 700px);
+  top: 45%;
+  left: -18%;
+  background: var(--amber-deep);
+  filter: blur(200px);
+  opacity: 0.18;
+}
+.page-glow--right {
+  width: clamp(280px, 38vw, 600px);
+  height: clamp(280px, 38vw, 600px);
+  bottom: 28%;
+  right: -15%;
+  background: var(--amber);
+  filter: blur(180px);
+  opacity: 0.12;
 }
 
 /* ===========================================================================
@@ -146,6 +188,17 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .btn--ghost:hover { transform: translateY(-3px); border-color: var(--amber); color: var(--amber-2); }
 
 .btn--block { width: 100%; }
+
+/* ===========================================================================
+   Mobile-first global overrides
+   =========================================================================== */
+@media (max-width: 480px) {
+  .container { padding: 0 16px; }
+  .section { padding: clamp(50px, 12vw, 100px) 0; }
+  .heading { font-size: clamp(2rem, 9vw, 3.2rem); }
+  .lead { font-size: 15px; }
+  .section-head { margin-bottom: clamp(28px, 7vw, 48px); }
+}
 
 /* ===========================================================================
    Reduced motion

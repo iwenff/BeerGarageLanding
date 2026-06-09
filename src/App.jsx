@@ -1,10 +1,11 @@
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import { useGSAP } from '@gsap/react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 
 import Navbar from './components/Navbar'
 import MobileBar from './components/MobileBar'
+import MaxModal from './components/MaxModal'
 import Hero from './sections/Hero'
 import Menu from './sections/Menu'
 import Beers from './sections/Beers'
@@ -17,6 +18,9 @@ gsap.registerPlugin(useGSAP, ScrollTrigger)
 
 export default function App() {
   const root = useRef(null)
+  const [maxModalOpen, setMaxModalOpen] = useState(false)
+  const openMaxModal = () => setMaxModalOpen(true)
+  const closeMaxModal = () => setMaxModalOpen(false)
 
   useGSAP(() => {
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -56,17 +60,21 @@ export default function App() {
 
   return (
     <div ref={root}>
+      {/* глобальные ambient-блобы — создают непрерывное свечение на всей странице */}
+      <div className="page-glow page-glow--left" />
+      <div className="page-glow page-glow--right" />
       <Navbar />
       <main>
-        <Hero />
+        <Hero onMaxClick={openMaxModal} />
         <Menu />
         <Beers />
-        <Events />
+        <Events onMaxClick={openMaxModal} />
         <Interior />
-        <Connect />
+        <Connect onMaxClick={openMaxModal} />
       </main>
-      <Footer />
-      <MobileBar />
+      <Footer onMaxClick={openMaxModal} />
+      <MobileBar onMaxClick={openMaxModal} />
+      {maxModalOpen && <MaxModal onClose={closeMaxModal} />}
     </div>
   )
 }

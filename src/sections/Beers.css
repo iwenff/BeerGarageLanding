@@ -1,4 +1,4 @@
-.beers { background: var(--bg-2); overflow: hidden; }
+.beers { background: transparent; }
 .beers__blob { width: 520px; height: 520px; left: -160px; bottom: -10%; opacity: 0.18; }
 
 /* marquee strip */
@@ -11,6 +11,9 @@
   margin-bottom: clamp(40px, 7vw, 80px);
   background: rgba(244,165,46,0.04);
   transform: rotate(-1.2deg) scale(1.04);
+  /* fade по краям чтобы текст не обрезался резко */
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, black 8%, black 92%, transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0%, black 8%, black 92%, transparent 100%);
 }
 .beers__marquee-track {
   display: inline-flex; white-space: nowrap;
@@ -85,12 +88,25 @@
   opacity: 0.5; transform: rotate(-5deg); border: 1px solid var(--line);
 }
 
+/* скрываем абсолютно позиционированную картинку-декорацию — на мобиле наезжала */
+.beers__deco-2 { display: none; }
+
 @media (max-width: 900px) {
   .beers__grid { grid-template-columns: 1fr; }
   .beers__deco { display: none; }
   .beers__head { grid-template-columns: 1fr; }
 }
-@media (max-width: 460px) {
-  .beercard { grid-template-columns: 110px 1fr; }
-  .beercard__media::after { display: none; }
+@media (max-width: 600px) {
+  .beercard { grid-template-columns: 1fr; border-radius: var(--radius-sm); }
+  .beercard__media { height: 190px; }
+  .beercard__media::after { background: linear-gradient(180deg, transparent 50%, rgba(27,27,33,0.95)); }
+  .beercard__stamp { top: 12px; left: 8px; transform: rotate(-4deg); }
+  .beercard__body { padding: 16px; }
+  .beercard__name { font-size: 1.3rem; }
+}
+@media (max-width: 480px) {
+  .beers__grid { gap: 12px; }
+  .beercard__media { height: 170px; }
+  .beercard__desc { font-size: 13px; }
+  .beers__marquee { transform: rotate(-1deg) scale(1.03); }
 }

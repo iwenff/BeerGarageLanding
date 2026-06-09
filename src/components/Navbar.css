@@ -11,22 +11,26 @@
   border-bottom-color: var(--line);
 }
 .nav__inner {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  justify-content: space-between;
   height: 72px;
 }
+.nav__brand { justify-self: start; }
+.nav__links  { justify-self: center; }
+.nav__burger { justify-self: end; }
 
 .nav__brand { display: flex; align-items: center; gap: 12px; }
 .nav__brand img {
-  width: 40px; height: 40px; border-radius: 11px; object-fit: cover;
-  box-shadow: 0 0 0 1px var(--line-2);
+  width: 46px; height: 46px; border-radius: 13px; object-fit: cover;
+  box-shadow: 0 0 0 1px var(--line-2), 0 0 22px -2px rgba(244,165,46,0.28);
 }
 .nav__brand span {
   font-family: var(--font-display);
   font-weight: 600;
   letter-spacing: 0.04em;
   font-size: 19px;
+  line-height: 1.2;
   color: var(--cream);
 }
 .nav__brand b { color: var(--amber); font-weight: 700; }
@@ -40,9 +44,6 @@
   position: relative;
 }
 .nav__links > a:hover { color: var(--cream); }
-.nav__cta-mobile { display: none; }
-
-.nav__cta { padding: 11px 20px; font-size: 14px; }
 
 .nav__burger { display: none; width: 40px; height: 40px; flex-direction: column; gap: 5px; align-items: center; justify-content: center; }
 .nav__burger span { display: block; width: 24px; height: 2px; background: var(--cream); border-radius: 2px; transition: transform 0.3s, opacity 0.2s; }
@@ -51,16 +52,17 @@
 .nav__burger.is-open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
 
 @media (max-width: 860px) {
-  .nav__cta { display: none; }
   .nav__burger { display: flex; }
+  .nav__brand span { font-size: 16px; }
+  .nav__brand img { width: 38px; height: 38px; border-radius: 11px; }
   .nav__links {
     position: fixed;
     inset: 72px 0 auto 0;
     flex-direction: column;
     align-items: stretch;
-    gap: 4px;
-    padding: 18px 22px 28px;
-    background: rgba(13, 13, 16, 0.97);
+    gap: 0;
+    padding: 12px 22px 28px;
+    background: rgba(11, 11, 13, 0.98);
     backdrop-filter: blur(16px);
     border-bottom: 1px solid var(--line);
     transform: translateY(-120%);
@@ -68,6 +70,11 @@
     pointer-events: none;
   }
   .nav__links.is-open { transform: translateY(0); pointer-events: auto; }
-  .nav__links > a { padding: 14px 6px; font-size: 17px; border-bottom: 1px solid var(--line); }
-  .nav__cta-mobile { display: inline-flex; margin-top: 16px; }
+  .nav__links > a {
+    padding: 15px 4px;
+    font-size: 18px;
+    border-bottom: 1px solid var(--line);
+    color: var(--cream);
+  }
+  .nav__links > a:last-of-type { border-bottom: none; }
 }

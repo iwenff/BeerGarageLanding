@@ -20,14 +20,18 @@
   letter-spacing: 0.14em; font-size: 12px; color: var(--muted); margin-bottom: 16px;
 }
 .footer__icons { display: flex; flex-wrap: wrap; gap: 12px; }
-.footer__icons a {
+.footer__icons a,
+.footer__icons button {
   width: 50px; height: 50px; border-radius: 14px;
   display: grid; place-items: center;
   background: var(--panel); border: 1px solid var(--line-2); color: var(--cream);
   transition: background 0.25s, color 0.25s, transform 0.25s, border-color 0.25s;
+  cursor: pointer;
 }
-.footer__icons a svg { width: 22px; height: 22px; }
-.footer__icons a:hover { background: var(--amber); color: #1a1206; border-color: var(--amber); transform: translateY(-3px); }
+.footer__icons a svg,
+.footer__icons button svg { width: 22px; height: 22px; }
+.footer__icons a:hover,
+.footer__icons button:hover { background: var(--amber); color: #1a1206; border-color: var(--amber); transform: translateY(-3px); }
 
 .footer__bottom {
   display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px;
@@ -40,5 +44,11 @@
   .footer { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
 }
 @media (max-width: 700px) {
-  .footer__inner { grid-template-columns: 1fr; gap: 30px; }
+  .footer__inner { grid-template-columns: 1fr; gap: 28px; }
+}
+@media (max-width: 480px) {
+  .footer { padding-bottom: calc(104px + env(safe-area-inset-bottom, 0px)); }
+  .footer__brand img { width: 48px; height: 48px; }
+  .footer__logo { font-size: 1.5rem; }
+  .footer__icons a, .footer__icons button { width: 46px; height: 46px; border-radius: 12px; }
 }

@@ -3,15 +3,22 @@
   min-height: 100svh;
   display: flex;
   align-items: flex-end;
-  overflow: hidden;
   padding-bottom: clamp(40px, 7vh, 90px);
+  /* НЕ overflow: hidden — glass-картинка должна выходить за пределы секции */
+}
+.hero__bg-clip {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  z-index: 0;
 }
 .hero__bg {
   position: absolute;
-  inset: -8% -8% -8% -8%;
-  width: 116%; height: 116%;
+  left: 0; right: 0;
+  top: -10%; bottom: -10%;
+  width: 100%; height: 120%;
   object-fit: cover;
-  object-position: center 40%;
+  object-position: center center;
   z-index: 0;
   will-change: transform;
 }
@@ -35,7 +42,11 @@
   letter-spacing: -0.02em;
   margin: 16px 0 4px;
 }
-.hero__title .line { display: block; overflow: hidden; }
+.hero__title .line {
+  display: block;
+  overflow: hidden;
+  padding-bottom: 0.12em; /* room for letter bottoms — prevents clipping at tight line-height */
+}
 .hero__title .line span { display: block; }
 .hero__title .accent { color: var(--amber); text-shadow: 0 0 50px rgba(244,165,46,0.4); }
 
@@ -60,19 +71,32 @@
 @keyframes bob { 0%,100% { transform: rotate(90deg) translateX(0); } 50% { transform: rotate(90deg) translateX(6px); } }
 
 .hero__glass {
-  position: absolute; z-index: 2;
-  right: clamp(-40px, 4vw, 80px); bottom: -6%;
+  position: absolute; z-index: 1000;
+  right: clamp(-40px, 4vw, 80px); bottom: -8%;
   width: clamp(150px, 22vw, 320px);
   border-radius: 18px;
   box-shadow: var(--shadow);
   transform: rotate(4deg);
   border: 1px solid var(--line-2);
   will-change: transform;
+  pointer-events: none;
 }
 
 @media (max-width: 860px) {
-  .hero { align-items: center; padding-top: 90px; }
-  .hero__cta .btn { flex: 1 1 100%; }
+  .hero { align-items: flex-end; padding-top: 90px; padding-bottom: clamp(110px, 18vh, 150px); }
+  .hero__title { font-size: clamp(3.6rem, 20vw, 5.4rem); }
+  .hero__cta { flex-direction: column; gap: 12px; }
+  .hero__cta .btn { width: 100%; justify-content: center; }
   .hero__glass { display: none; }
-  .hero__stats { gap: 22px; }
+  .hero__stats { gap: 18px; }
+  .hero__stats .stat b { font-size: clamp(1.6rem, 7vw, 2rem); }
+  .hero__scroll { display: none; }
+}
+@media (max-width: 480px) {
+  .hero__title { font-size: clamp(3rem, 22vw, 4.6rem); line-height: 0.86; }
+  .hero__lead { font-size: 15px; }
+  .hero__stats { flex-wrap: wrap; gap: 14px 24px; margin-top: 28px; }
+  .hero__stats .stat b { font-size: clamp(1.4rem, 8vw, 1.9rem); }
+  .hero__cta { margin-top: 22px; }
+  .hero__cta .btn { font-size: 14px; padding: 15px 20px; }
 }

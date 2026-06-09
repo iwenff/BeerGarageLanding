@@ -8,10 +8,10 @@ export default function Menu() {
       <div className="container">
         <div className="section-head">
           <span className="eyebrow" data-reveal>Кухня гаража</span>
-          <h2 className="heading" data-reveal>Бургеры, <span className="accent">которые держат</span></h2>
+          <h2 className="heading" data-reveal>Бургеры <span className="accent">к пиву</span></h2>
           <p className="lead" data-reveal>
-            Сочные котлеты, свежие булочки и фирменные соусы. Готовим так, чтобы
-            под крафт было вкусно — и просили добавки.
+            Говяжьи котлеты, свежие булки, фирменные соусы.
+            Без лишнего — просто вкусно под хорошее пиво.
           </p>
         </div>
 

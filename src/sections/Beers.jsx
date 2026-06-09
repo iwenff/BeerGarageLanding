@@ -9,8 +9,8 @@ export default function Beers() {
       {/* decorative marquee */}
       <div className="beers__marquee" aria-hidden>
         <div className="beers__marquee-track">
-          {Array.from({ length: 2 }).map((_, k) => (
-            <span key={k}>Уже улетели · их уже нет, но мы помним · было вкусно · </span>
+          {Array.from({ length: 8 }).map((_, k) => (
+            <span key={k}>Выпито до дна · на кранах уже другое · заглядывай чаще · </span>
           ))}
         </div>
       </div>
@@ -21,8 +21,8 @@ export default function Beers() {
             <span className="eyebrow" data-reveal>Архив вкусов</span>
             <h2 className="heading" data-reveal>Уже <span className="accent">улетели</span></h2>
             <p className="lead" data-reveal>
-              Эти позиции мы уже допили вместе с вами — их больше нет на кранах.
-              Но это пример того, какой крафт у нас бывает. Загляни, чтобы поймать новые.
+              Допили вместе с вами — этого уже нет на кранах.
+              Именно такой крафт мы любим. Следи за обновлениями, чтобы не пропустить следующий.
             </p>
           </div>
           <img className="beers__deco" src="/assets/hydration-guinness.jpg" alt="" aria-hidden data-reveal />

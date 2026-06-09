@@ -1,6 +1,6 @@
-import { ROOMS, LINKS } from '../data'
-import { ChatIcon } from '../components/icons'
-import './Interior.css'
+import { ROOMS, LINKS } from "../data";
+import { ChatIcon } from "../components/icons";
+import "./Interior.css";
 
 export default function Interior() {
   return (
@@ -8,14 +8,24 @@ export default function Interior() {
       <div className="container">
         <div className="section-head interior__head">
           <div>
-            <span className="eyebrow" data-reveal>Атмосфера</span>
-            <h2 className="heading" data-reveal>Как выглядит <span className="accent">гараж</span></h2>
+            <span className="eyebrow" data-reveal>
+              Атмосфера
+            </span>
+            <h2 className="heading" data-reveal>
+              Как выглядит <span className="accent">BEER GARAGE</span>
+            </h2>
             <p className="lead" data-reveal>
-              Бетон, металл и тёплый свет. Шумный общий зал для компании и тихий
-              VIP — для своих. Выбирай настроение.
+              Бетон, металл и тёплый свет. Общий зал — для шумной компании,
+              закрытый — для своих. Есть где развернуться.
             </p>
           </div>
-          <a className="btn btn--primary" href={LINKS.whatsapp} target="_blank" rel="noopener noreferrer" data-reveal>
+          <a
+            className="btn btn--primary"
+            href={LINKS.whatsapp}
+            target="_blank"
+            rel="noopener noreferrer"
+            data-reveal
+          >
             <ChatIcon /> Забронировать стол
           </a>
         </div>
@@ -34,5 +44,5 @@ export default function Interior() {
         </div>
       </div>
     </section>
-  )
+  );
 }
