@@ -1,0 +1,30 @@
+.mbar { display: none; }
+
+@media (max-width: 860px) {
+  .mbar {
+    position: fixed;
+    left: 12px; right: 12px;
+    bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    z-index: 900;
+    display: flex;
+    gap: 10px;
+    padding: 9px;
+    background: rgba(17, 17, 21, 0.86);
+    backdrop-filter: blur(14px);
+    border: 1px solid var(--line-2);
+    border-radius: 100px;
+    box-shadow: 0 14px 40px -12px rgba(0,0,0,0.8);
+  }
+  .mbar__btn {
+    flex: 1;
+    display: inline-flex; align-items: center; justify-content: center; gap: 9px;
+    padding: 13px 14px;
+    border-radius: 100px;
+    font-family: var(--font-display); text-transform: uppercase; font-weight: 600;
+    font-size: 14px; letter-spacing: 0.03em;
+  }
+  .mbar__btn svg { width: 18px; height: 18px; }
+  .mbar__btn--wa { background: linear-gradient(135deg, var(--amber-2), var(--amber) 60%, var(--amber-deep)); color: #1a1206; }
+  .mbar__btn--max { background: rgba(255,255,255,0.06); color: var(--cream); border: 1px solid var(--line-2); }
+  .mbar__btn:active { transform: scale(0.97); }
+}

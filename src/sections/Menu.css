@@ -1,0 +1,58 @@
+.menu { background: linear-gradient(180deg, var(--bg) 0%, var(--bg-2) 100%); }
+.menu__blob { width: 500px; height: 500px; right: -180px; top: 6%; opacity: 0.16; }
+
+.menu__grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 22px;
+  position: relative;
+  z-index: 1;
+}
+
+.burger {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.4s cubic-bezier(.2,.8,.2,1), border-color 0.4s, box-shadow 0.4s;
+}
+.burger:hover { transform: translateY(-8px); border-color: rgba(244,165,46,0.5); box-shadow: var(--shadow); }
+
+.burger__media { position: relative; aspect-ratio: 4 / 3; overflow: hidden; }
+.burger__media img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.6s cubic-bezier(.2,.8,.2,1); }
+.burger:hover .burger__media img { transform: scale(1.08); }
+.burger__tag {
+  position: absolute; top: 12px; left: 12px;
+  background: var(--amber); color: #1a1206;
+  font-family: var(--font-display); text-transform: uppercase;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.06em;
+  padding: 5px 11px; border-radius: 100px;
+}
+
+.burger__body { padding: 18px 18px 22px; display: flex; flex-direction: column; gap: 8px; }
+.burger__row { display: flex; align-items: baseline; justify-content: space-between; }
+.burger__row h3 { font-family: var(--font-display); text-transform: uppercase; font-size: 1.5rem; font-weight: 600; }
+.burger__num { font-family: var(--font-display); color: var(--amber); font-weight: 700; font-size: 1rem; opacity: 0.7; }
+.burger__body p { font-size: 14px; color: var(--muted); line-height: 1.5; }
+
+.menu__note {
+  margin-top: 34px;
+  display: flex; align-items: center; gap: 20px;
+  background: var(--bg-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 16px;
+  position: relative; z-index: 1;
+}
+.menu__note img { width: 92px; height: 92px; border-radius: var(--radius-sm); object-fit: cover; flex: none; }
+.menu__note b { font-family: var(--font-display); text-transform: uppercase; font-size: 1.15rem; display: block; }
+.menu__note span { color: var(--muted); font-size: 14px; }
+
+@media (max-width: 1024px) { .menu__grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 540px) {
+  .menu__grid { grid-template-columns: 1fr; }
+  .menu__note { flex-direction: column; text-align: center; }
+  .menu__note img { width: 100%; height: 150px; }
+}

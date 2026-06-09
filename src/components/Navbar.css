@@ -1,0 +1,73 @@
+.nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 1000;
+  transition: background 0.3s, border-color 0.3s, backdrop-filter 0.3s;
+  border-bottom: 1px solid transparent;
+}
+.nav--solid {
+  background: rgba(11, 11, 13, 0.72);
+  backdrop-filter: blur(14px);
+  border-bottom-color: var(--line);
+}
+.nav__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 72px;
+}
+
+.nav__brand { display: flex; align-items: center; gap: 12px; }
+.nav__brand img {
+  width: 40px; height: 40px; border-radius: 11px; object-fit: cover;
+  box-shadow: 0 0 0 1px var(--line-2);
+}
+.nav__brand span {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  font-size: 19px;
+  color: var(--cream);
+}
+.nav__brand b { color: var(--amber); font-weight: 700; }
+
+.nav__links { display: flex; align-items: center; gap: 30px; }
+.nav__links > a {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--muted);
+  transition: color 0.2s;
+  position: relative;
+}
+.nav__links > a:hover { color: var(--cream); }
+.nav__cta-mobile { display: none; }
+
+.nav__cta { padding: 11px 20px; font-size: 14px; }
+
+.nav__burger { display: none; width: 40px; height: 40px; flex-direction: column; gap: 5px; align-items: center; justify-content: center; }
+.nav__burger span { display: block; width: 24px; height: 2px; background: var(--cream); border-radius: 2px; transition: transform 0.3s, opacity 0.2s; }
+.nav__burger.is-open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.nav__burger.is-open span:nth-child(2) { opacity: 0; }
+.nav__burger.is-open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+@media (max-width: 860px) {
+  .nav__cta { display: none; }
+  .nav__burger { display: flex; }
+  .nav__links {
+    position: fixed;
+    inset: 72px 0 auto 0;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+    padding: 18px 22px 28px;
+    background: rgba(13, 13, 16, 0.97);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--line);
+    transform: translateY(-120%);
+    transition: transform 0.4s cubic-bezier(.2,.8,.2,1);
+    pointer-events: none;
+  }
+  .nav__links.is-open { transform: translateY(0); pointer-events: auto; }
+  .nav__links > a { padding: 14px 6px; font-size: 17px; border-bottom: 1px solid var(--line); }
+  .nav__cta-mobile { display: inline-flex; margin-top: 16px; }
+}
