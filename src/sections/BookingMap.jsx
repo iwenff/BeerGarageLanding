@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import './BookingMap.css'
 
-const API = import.meta.env.VITE_API_URL ?? ''
+const API = process.env.NEXT_PUBLIC_API_URL
 
 const TABLES = [
   { id: 1, label: '1',   capacity: 4, x: 300, y: 200, width: 80,  height: 60  },
