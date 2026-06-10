@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import './BookingMap.css'
 
-const API = process.env.NEXT_PUBLIC_API_URL
+const API_URL = 'https://beergarage-back-production.up.railway.app'
 
 const TABLES = [
   { id: 1, label: '1',   capacity: 4, x: 300, y: 200, width: 80,  height: 60  },
@@ -41,7 +41,7 @@ export default function BookingMap({ onClose }) {
     if (!date || !timeStart || !timeEnd) return
     try {
       const qs = new URLSearchParams({ date, timeStart, timeEnd })
-      const res = await fetch(`${API}/tables?${qs}`)
+      const res = await fetch(`${API_URL}/tables?${qs}`)
       if (!res.ok) return
       const data = await res.json()
       const map = {}
@@ -78,7 +78,7 @@ export default function BookingMap({ onClose }) {
     setSubmitting(true)
     setApiError(null)
     try {
-      const res = await fetch(`${API}/reservations`, {
+      const res = await fetch(`${API_URL}/reservations`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
