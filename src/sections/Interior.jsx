@@ -1,8 +1,8 @@
-import { ROOMS, LINKS } from "../data";
+import { ROOMS } from "../data";
 import { ChatIcon } from "../components/icons";
 import "./Interior.css";
 
-export default function Interior() {
+export default function Interior({ onBookClick }) {
   return (
     <section className="section interior" id="interior">
       <div className="container">
@@ -19,15 +19,14 @@ export default function Interior() {
               закрытый — для своих. Есть где развернуться.
             </p>
           </div>
-          <a
+          <button
             className="btn btn--primary"
-            href={LINKS.whatsapp}
-            target="_blank"
-            rel="noopener noreferrer"
+            onClick={onBookClick}
+            type="button"
             data-reveal
           >
             <ChatIcon /> Забронировать стол
-          </a>
+          </button>
         </div>
 
         <div className="interior__grid">

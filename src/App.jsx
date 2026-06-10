@@ -12,6 +12,7 @@ import Menu from './sections/Menu'
 import Beers from './sections/Beers'
 import Events from './sections/Events'
 import Interior from './sections/Interior'
+import BookingMap from './sections/BookingMap'
 import Connect from './sections/Connect'
 import Footer from './sections/Footer'
 
@@ -19,12 +20,15 @@ gsap.registerPlugin(useGSAP, ScrollTrigger)
 
 export default function App() {
   const root = useRef(null)
-  const [maxModalOpen,  setMaxModalOpen]  = useState(false)
-  const [menuPageOpen,  setMenuPageOpen]  = useState(false)
+  const [maxModalOpen,     setMaxModalOpen]     = useState(false)
+  const [menuPageOpen,     setMenuPageOpen]     = useState(false)
+  const [bookingOpen,      setBookingOpen]      = useState(false)
   const openMaxModal  = () => setMaxModalOpen(true)
   const closeMaxModal = () => setMaxModalOpen(false)
   const openMenuPage  = () => setMenuPageOpen(true)
   const closeMenuPage = () => setMenuPageOpen(false)
+  const openBooking   = () => setBookingOpen(true)
+  const closeBooking  = () => setBookingOpen(false)
 
   useGSAP(() => {
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -73,13 +77,14 @@ export default function App() {
         <Menu onMenuClick={openMenuPage} />
         <Beers />
         <Events onMaxClick={openMaxModal} />
-        <Interior />
+        <Interior onBookClick={openBooking} />
         <Connect onMaxClick={openMaxModal} />
       </main>
       <Footer onMaxClick={openMaxModal} />
       <MobileBar onMenuClick={openMenuPage} />
-      {maxModalOpen  && <MaxModal  onClose={closeMaxModal} />}
-      {menuPageOpen  && <MenuPage  onClose={closeMenuPage} />}
+      {maxModalOpen  && <MaxModal   onClose={closeMaxModal} />}
+      {menuPageOpen  && <MenuPage   onClose={closeMenuPage} />}
+      {bookingOpen   && <BookingMap onClose={closeBooking}  />}
     </div>
   )
 }
