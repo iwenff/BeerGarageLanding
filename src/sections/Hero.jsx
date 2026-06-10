@@ -5,7 +5,7 @@ import { LINKS } from "../data";
 import { WhatsAppIcon, MaxIcon, ArrowIcon } from "../components/icons";
 import "./Hero.css";
 
-export default function Hero({ onMaxClick }) {
+export default function Hero({ onMaxClick, onMenuClick }) {
   const root = useRef(null);
 
   useGSAP(
@@ -101,7 +101,7 @@ export default function Hero({ onMaxClick }) {
           </span>
         </h1>
 
-        <p style={{ marginTop: "45px" }} className="hero__lead">
+        <p className="hero__lead">
           Живой крафт на кранах, нормальные бургеры и хорошая компания. Бетон,
           тёплый свет и янтарь в бокале — всё остальное само складывается.
         </p>
@@ -119,6 +119,27 @@ export default function Hero({ onMaxClick }) {
             <MaxIcon /> Написать руководителю в Макс
           </button>
         </div>
+
+        <button className="hero__menu-btn" onClick={onMenuClick} type="button">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <path d="M3 12h18M3 6h18M3 18h18" />
+          </svg>
+          Открыть меню
+          <svg
+            className="hero__menu-arrow"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <path d="m9 18 6-6-6-6" />
+          </svg>
+        </button>
 
         <div className="hero__stats">
           <div className="stat">

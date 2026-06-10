@@ -17,31 +17,39 @@
     box-shadow: 0 16px 48px -10px rgba(0,0,0,0.9);
   }
   .mbar__btn {
-    flex: 1;
-    min-width: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
-    padding: 14px 10px;
     border-radius: 100px;
     font-family: var(--font-display);
     text-transform: uppercase;
     font-weight: 700;
-    font-size: clamp(12px, 3.5vw, 15px);
     letter-spacing: 0.02em;
     white-space: nowrap;
     overflow: hidden;
   }
-  .mbar__btn svg { width: 18px; height: 18px; flex: none; }
-  .mbar__btn--wa {
+  .mbar__btn svg { flex: none; }
+  .mbar__btn:active { transform: scale(0.97); }
+
+  /* primary: "Меню" amber pill — takes most of the bar */
+  .mbar__btn--menu {
+    flex: 1;
+    gap: 9px;
+    padding: 14px 18px;
+    font-size: clamp(13px, 3.8vw, 16px);
     background: linear-gradient(135deg, var(--amber-2), var(--amber) 60%, var(--amber-deep));
     color: #1a1206;
   }
-  .mbar__btn--max {
+  .mbar__btn--menu svg { width: 20px; height: 20px; }
+
+  /* secondary: WhatsApp icon-only */
+  .mbar__btn--wa {
+    flex: none;
+    width: 50px;
+    height: 50px;
     background: rgba(255,255,255,0.07);
-    color: var(--cream);
     border: 1px solid rgba(255,255,255,0.14);
+    color: var(--cream);
   }
-  .mbar__btn:active { transform: scale(0.97); }
+  .mbar__btn--wa svg { width: 22px; height: 22px; }
 }

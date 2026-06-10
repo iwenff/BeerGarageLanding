@@ -6,6 +6,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import Navbar from './components/Navbar'
 import MobileBar from './components/MobileBar'
 import MaxModal from './components/MaxModal'
+import MenuPage from './sections/MenuPage'
 import Hero from './sections/Hero'
 import Menu from './sections/Menu'
 import Beers from './sections/Beers'
@@ -18,9 +19,12 @@ gsap.registerPlugin(useGSAP, ScrollTrigger)
 
 export default function App() {
   const root = useRef(null)
-  const [maxModalOpen, setMaxModalOpen] = useState(false)
-  const openMaxModal = () => setMaxModalOpen(true)
+  const [maxModalOpen,  setMaxModalOpen]  = useState(false)
+  const [menuPageOpen,  setMenuPageOpen]  = useState(false)
+  const openMaxModal  = () => setMaxModalOpen(true)
   const closeMaxModal = () => setMaxModalOpen(false)
+  const openMenuPage  = () => setMenuPageOpen(true)
+  const closeMenuPage = () => setMenuPageOpen(false)
 
   useGSAP(() => {
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -63,18 +67,19 @@ export default function App() {
       {/* глобальные ambient-блобы — создают непрерывное свечение на всей странице */}
       <div className="page-glow page-glow--left" />
       <div className="page-glow page-glow--right" />
-      <Navbar />
+      <Navbar onMenuClick={openMenuPage} />
       <main>
-        <Hero onMaxClick={openMaxModal} />
-        <Menu />
+        <Hero onMaxClick={openMaxModal} onMenuClick={openMenuPage} />
+        <Menu onMenuClick={openMenuPage} />
         <Beers />
         <Events onMaxClick={openMaxModal} />
         <Interior />
         <Connect onMaxClick={openMaxModal} />
       </main>
       <Footer onMaxClick={openMaxModal} />
-      <MobileBar onMaxClick={openMaxModal} />
-      {maxModalOpen && <MaxModal onClose={closeMaxModal} />}
+      <MobileBar onMenuClick={openMenuPage} />
+      {maxModalOpen  && <MaxModal  onClose={closeMaxModal} />}
+      {menuPageOpen  && <MenuPage  onClose={closeMenuPage} />}
     </div>
   )
 }

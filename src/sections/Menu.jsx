@@ -1,7 +1,7 @@
 import { BURGERS } from '../data'
 import './Menu.css'
 
-export default function Menu() {
+export default function Menu({ onMenuClick }) {
   return (
     <section className="section menu" id="menu">
       <div className="blob menu__blob" style={{ background: 'var(--amber)' }} />
@@ -33,13 +33,15 @@ export default function Menu() {
           ))}
         </div>
 
-        <div className="menu__note" data-reveal>
-          <img src="/assets/hydration-burger.jpg" alt="" aria-hidden />
-          <div>
-            <b>Это лишь часть меню.</b>
-            <span>Полный список бургеров, закусок и сетов — на месте и по QR в баре.</span>
+        <button className="menu__more-btn" onClick={onMenuClick} type="button" data-reveal>
+          <div className="menu__more-text">
+            <span>Закуски, салаты, морепродукты, коктейли и многое другое</span>
+            <strong>Открыть полное меню</strong>
           </div>
-        </div>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="m9 18 6-6-6-6" />
+          </svg>
+        </button>
       </div>
     </section>
   )
