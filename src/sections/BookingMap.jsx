@@ -338,6 +338,11 @@ export default function BookingMap({ onClose }) {
     e.stopPropagation();
     if (isOcc(chair.key) || !tableSuitable) return;
 
+    if (!selected.has(chair.key) && selected.size >= guestCount) {
+      setMapNotice(`Уже выбрано ${guestCount} ${pluralSeats(guestCount)} — это максимум`);
+      return;
+    }
+
     const cap = tableCap(table);
     const fromThisTable = table.chairs.filter((c) => selected.has(c.key)).length;
 
@@ -731,6 +736,13 @@ export default function BookingMap({ onClose }) {
                           aria-pressed={sel}
                           opacity={chairOpacity}
                         >
+                          <circle
+                            cx={chair.x}
+                            cy={chair.y}
+                            r={CHAIR_R + 20}
+                            fill="rgba(0,0,0,0)"
+                            style={{ pointerEvents: "all" }}
+                          />
                           {occ && <title>Занято до {timeEnd}</title>}
                           {sel && (
                             <circle

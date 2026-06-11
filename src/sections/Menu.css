@@ -104,6 +104,11 @@
   .burger__row h3 { font-size: 1.3rem; }
   .burger { border-radius: var(--radius-sm); }
 }
+@media (max-width: 540px) {
+  /* note: скрываем hydration-декорацию чтобы не ломала строку */
+  .menu__note img { display: none; }
+  .menu__note { border-radius: var(--radius-sm); }
+}
 @media (max-width: 480px) {
   .menu__grid { gap: 12px; }
   .burger__media { aspect-ratio: 3 / 2; }
@@ -112,9 +117,4 @@
   .menu__note { padding: 14px; gap: 14px; }
   .menu__note b { font-size: 1rem; }
   .menu__note span { font-size: 13px; }
-}
-@media (max-width: 540px) {
-  /* note: скрываем hydration-декорацию чтобы не ломала строку */
-  .menu__note img { display: none; }
-  .menu__note { border-radius: var(--radius-sm); }
 }

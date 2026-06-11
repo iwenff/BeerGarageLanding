@@ -642,5 +642,37 @@
   .bm-form-grid   { grid-template-columns: 1fr; gap: 10px; }
   .bm-filters     { gap: 10px; }
   .bm-filter-field{ min-width: 110px; }
-  .bm-map-wrap    { padding: 10px 8px 8px; }
+
+  .bm-map-wrap {
+    padding: 10px 8px 8px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .bm-svg {
+    min-width: 620px;
+    width: 620px;
+    height: auto;
+  }
+
+  .bm-legend { gap: 12px; justify-content: flex-start; }
+  .bm-leg    { font-size: 10px; }
+
+  .bm-submit { min-height: 52px; }
+
+  .bm-guests-input { font-size: 18px; padding: 12px 14px; }
+  .bm-guests-btn   { padding: 12px 22px; }
+
+  .bm-form-title { font-size: 1.1rem; margin-bottom: 14px; }
+}
+
+@media (max-width: 390px) {
+  .bm-modal__head { padding: 16px 14px 14px; }
+  .bm-modal__body { padding: 12px 14px 24px; gap: 14px; }
+  .bm-form-wrap   { padding: 14px 12px 16px; }
+  .bm-filters     { gap: 8px; }
+  .bm-filter-field{ min-width: 96px; font-size: 13px; }
+  .bm-svg         { min-width: 540px; width: 540px; }
+  .bm-guests-title { font-size: 1.1rem; }
+  .bm-map-notice  { font-size: 12px; padding: 8px 12px; }
 }

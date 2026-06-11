@@ -608,6 +608,11 @@
   .ecard__media { height: 170px; }
 }
 
+@media (max-width: 480px) {
+  .ecard { width: 244px; }
+  .ecard__media { height: 162px; }
+}
+
 @media (max-width: 390px) {
   .emodal-overlay { padding: 12px; }
   .ecard { width: 230px; }
