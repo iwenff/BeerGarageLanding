@@ -149,7 +149,7 @@ export default function Hero({ onMaxClick, onMenuClick }) {
         <div className="hero__stats">
           <div className="stat">
             <b>18</b>
-            <span>крафтов</span>
+            <span>позиций на кране</span>
           </div>
           <div className="stat">
             <b>4</b>
