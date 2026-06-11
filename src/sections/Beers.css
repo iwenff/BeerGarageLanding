@@ -49,8 +49,10 @@
 .beercard:hover { transform: translateY(-6px); border-color: rgba(244,165,46,0.45); box-shadow: var(--shadow); }
 
 .beercard__media { position: relative; overflow: hidden; }
-.beercard__media img { width: 100%; height: 100%; object-fit: cover; filter: saturate(1.05); transition: transform 0.6s; }
-.beercard:hover .beercard__media img { transform: scale(1.07); }
+.beercard__media img,
+.beercard__media video { width: 100%; height: 100%; object-fit: cover; filter: saturate(1.05); transition: transform 0.6s; }
+.beercard:hover .beercard__media img,
+.beercard:hover .beercard__media video { transform: scale(1.07); }
 .beercard__media::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, transparent 60%, rgba(27,27,33,0.9)); }
 
 .beercard__stamp {
@@ -71,7 +73,7 @@
 .beercard__body { padding: 20px 22px; display: flex; flex-direction: column; gap: 9px; }
 .beercard__brewery { font-size: 12px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--amber); font-weight: 700; }
 .beercard__name { font-family: var(--font-display); text-transform: uppercase; font-size: 1.55rem; font-weight: 600; line-height: 1; }
-.beercard__desc { font-size: 13.5px; color: var(--muted); line-height: 1.5; }
+.beercard__desc { font-size: 13.5px; color: var(--muted); line-height: 1.5; white-space: pre-line; }
 
 .beercard__specs { display: flex; flex-wrap: wrap; gap: 7px; margin-top: auto; padding-top: 6px; }
 .spec {

@@ -19,7 +19,7 @@ export default function Beers() {
         <div className="section-head beers__head">
           <div>
             <span className="eyebrow" data-reveal>Архив вкусов</span>
-            <h2 className="heading" data-reveal>Уже <span className="accent">улетели</span></h2>
+            <h2 className="heading" data-reveal><span className="accent">Улетело</span></h2>
             <p className="lead" data-reveal>
               Допили вместе с вами — этого уже нет на кранах.
               Именно такой крафт мы любим. Следи за обновлениями, чтобы не пропустить следующий.
@@ -32,12 +32,16 @@ export default function Beers() {
           {BEERS.map((b, i) => (
             <article className="beercard" data-reveal key={b.id}>
               <div className="beercard__media">
-                <img src={b.img} alt={`${b.brewery} — ${b.name}`} loading="lazy" />
+                {b.video ? (
+                  <video src={b.video} autoPlay loop muted playsInline />
+                ) : (
+                  <img src={b.img} alt={`${b.brewery ? b.brewery + ' — ' : ''}${b.name}`} loading="lazy" />
+                )}
                 <span className="beercard__stamp">Улетело</span>
                 <span className="beercard__index">0{i + 1}</span>
               </div>
               <div className="beercard__body">
-                <span className="beercard__brewery">{b.brewery}</span>
+                {b.brewery && <span className="beercard__brewery">{b.brewery}</span>}
                 <h3 className="beercard__name">{b.name}</h3>
                 <p className="beercard__desc">{b.desc}</p>
                 <div className="beercard__specs">

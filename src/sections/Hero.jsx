@@ -120,7 +120,12 @@ export default function Hero({ onMaxClick, onMenuClick }) {
           </button>
         </div>
 
-        <button className="hero__menu-btn" onClick={onMenuClick} type="button">
+        <button
+          style={{ marginTop: "44px" }}
+          className="hero__menu-btn"
+          onClick={onMenuClick}
+          type="button"
+        >
           <svg
             viewBox="0 0 24 24"
             fill="none"
@@ -143,8 +148,8 @@ export default function Hero({ onMaxClick, onMenuClick }) {
 
         <div className="hero__stats">
           <div className="stat">
-            <b>30+</b>
-            <span>кранов крафта</span>
+            <b>18</b>
+            <span>крафтов</span>
           </div>
           <div className="stat">
             <b>4</b>

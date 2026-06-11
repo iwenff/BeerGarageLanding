@@ -321,7 +321,7 @@ export default function MenuPage({ onClose }) {
             <>
               <div className="menupage__section-head">
                 <h2 className="menupage__section-title">
-                  На кранах <span className="accent">30+</span>
+                  На кранах <span className="accent">18</span>
                 </h2>
                 <p className="menupage__section-note">
                   Ротация каждую неделю — актуальный список у бармена
