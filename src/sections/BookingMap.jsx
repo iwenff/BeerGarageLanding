@@ -137,7 +137,6 @@ const TABLES = RAW_TABLES.map((t) => ({
 
 const todayStr = () => new Date().toISOString().slice(0, 10);
 
-// Returns [timeStart, timeEnd] initialised to current time rounded up to next 30-min slot
 function getInitTimes() {
   const now = new Date();
   const h = now.getHours();
@@ -152,11 +151,21 @@ function getInitTimes() {
   return [fmt(startTotalMin), fmt(endTotalMin)];
 }
 
+const tableCap = (t) => t.chairs.length;
+const is2seat   = (t) => tableCap(t) === 2;
+const is4or5    = (t) => tableCap(t) === 4 || tableCap(t) === 5;
+const is6seat   = (t) => tableCap(t) === 6;
+const is8plus   = (t) => tableCap(t) >= 8;
+
+function pluralSeats(n) {
+  return n === 1 ? "место" : n < 5 ? "места" : "мест";
+}
+
 export default function BookingMap({ onClose }) {
-  // ── шаг 1: ввод гостей; шаг 2: карта ──────────────────────────────────────
   const [step, setStep] = useState("guests");
   const [guestInput, setGuestInput] = useState("");
   const [guestCount, setGuestCount] = useState(0);
+  const [guestTooMany, setGuestTooMany] = useState(false);
 
   const [occupied, setOccupied] = useState(new Set());
   const [selected, setSelected] = useState(new Set());
@@ -167,17 +176,14 @@ export default function BookingMap({ onClose }) {
   const [submitting, setSub] = useState(false);
   const [success, setSuccess] = useState(false);
   const [apiError, setError] = useState(null);
-  // управление модалкой "нет мест"
   const [noSeatsDismissed, setNoSeatsDismissed] = useState(false);
+  const [mapNotice, setMapNotice] = useState(null);
 
   const formRef = useRef(null);
-  // frontChair.key → real backend chair id
   const keyToChairId = useRef({});
 
   useEffect(() => {
-    const fn = (e) => {
-      if (e.key === "Escape") onClose();
-    };
+    const fn = (e) => { if (e.key === "Escape") onClose(); };
     document.addEventListener("keydown", fn);
     document.body.style.overflow = "hidden";
     return () => {
@@ -188,7 +194,6 @@ export default function BookingMap({ onClose }) {
 
   const fetchStatuses = useCallback(async () => {
     if (!date || !timeStart || !timeEnd) return;
-    // при каждом новом запросе сбрасываем dismissed, чтобы модалка могла открыться снова
     setNoSeatsDismissed(false);
     try {
       const qs = new URLSearchParams({ date, timeStart, timeEnd });
@@ -205,7 +210,9 @@ export default function BookingMap({ onClose }) {
             const frontChair = frontTable.chairs[idx];
             if (!frontChair) return;
             newMap[frontChair.key] = backendChair.id;
-            if (backendChair.status === "occupied") occ.add(frontChair.key);
+            if (backendChair.status !== "free") {
+              occ.add(frontChair.key);
+            }
           });
         });
       }
@@ -224,43 +231,91 @@ export default function BookingMap({ onClose }) {
     fetchStatuses();
   }, [fetchStatuses]);
 
-  const isOcc = (key) => occupied.has(key);
-  const isSel = (key) => selected.has(key);
-
-  // ── умная фильтрация столов ────────────────────────────────────────────────
-  const freeChairsOf = (table) => table.chairs.filter((c) => !isOcc(c.key));
-
-  // Находим минимальное количество свободных мест среди столов, которые вообще
-  // могут вместить гостей. Только столы с этим минимумом считаются подходящими.
-  const nonBarCandidates = TABLES.filter(
-    (t) => t.label !== "BAR" && freeChairsOf(t).length >= guestCount,
-  );
-  const minFreeSeats =
-    nonBarCandidates.length > 0
-      ? Math.min(...nonBarCandidates.map((t) => freeChairsOf(t).length))
-      : Infinity;
-
-  const isTableSuitable = (table) => {
-    if (table.label === "BAR") return true;
-    const free = freeChairsOf(table).length;
-    return free >= guestCount && free === minFreeSeats;
+  const resetOnTimeChange = () => {
+    setSelected(new Set());
+    setMapNotice(null);
+    setError(null);
   };
 
-  const hasSuitableNonBar = nonBarCandidates.length > 0;
-  const showNoSeatsModal = step === "map" && !hasSuitableNonBar && !noSeatsDismissed;
+  const handleDateChange = (e) => {
+    setDate(e.target.value);
+    resetOnTimeChange();
+  };
+  const handleTimeStartChange = (e) => {
+    setTimeStart(e.target.value);
+    resetOnTimeChange();
+  };
+  const handleTimeEndChange = (e) => {
+    setTimeEnd(e.target.value);
+    resetOnTimeChange();
+  };
 
-  // ── handlers ───────────────────────────────────────────────────────────────
+  const isOcc = (key) => occupied.has(key);
+  const isSel = (key) => selected.has(key);
+  const freeChairsOf = (table) => table.chairs.filter((c) => !isOcc(c.key));
+
+  // Tier-based suitability: cascade through preference tiers
+  const computeSuitableNonBarTables = () => {
+    if (!guestCount) return [];
+    const nonBar = TABLES.filter((t) => t.label !== "BAR");
+
+    let tiers;
+    if (guestCount === 1)       tiers = [is2seat];
+    else if (guestCount === 2)  tiers = [is2seat, is4or5];
+    else if (guestCount <= 4)   tiers = [is4or5, is6seat];
+    else if (guestCount <= 6)   tiers = [is6seat, is8plus];
+    else                        tiers = [is8plus];
+
+    for (const tierFn of tiers) {
+      const candidates = nonBar.filter(
+        (t) => tierFn(t) && freeChairsOf(t).length >= guestCount,
+      );
+      if (candidates.length > 0) return candidates;
+    }
+    return [];
+  };
+
+  const suitableNonBarTables = computeSuitableNonBarTables();
+  const suitableNonBarIds = new Set(suitableNonBarTables.map((t) => t.id));
+
+  const barTable = TABLES.find((t) => t.label === "BAR");
+  const barFreeCount = barTable ? freeChairsOf(barTable).length : 0;
+  const barSuitable = guestCount > 0 && barFreeCount >= guestCount;
+
+  const isTableSuitable = (table) => {
+    if (table.label === "BAR") return barSuitable;
+    return suitableNonBarIds.has(table.id);
+  };
+
+  const hasSuitableNonBar = suitableNonBarTables.length > 0;
+  const hasAnySuitable = hasSuitableNonBar || barSuitable;
+  const showNoSeatsModal =
+    step === "map" && guestCount > 0 && !hasAnySuitable && !noSeatsDismissed;
+
+  // ── Step 1 handler ────────────────────────────────────────────────────────
   const handleGuestsNext = (e) => {
     e.preventDefault();
     const n = parseInt(guestInput, 10);
     if (!n || n < 1) return;
+    if (n > 8) {
+      setGuestTooMany(true);
+      return;
+    }
+    setGuestTooMany(false);
     setGuestCount(n);
     setStep("map");
   };
 
-  // Авто-выбор ровно guestCount свободных мест за этим столом
+  // ── Table click ───────────────────────────────────────────────────────────
   const toggleTable = (table) => {
-    if (!isTableSuitable(table)) return;
+    const suitable = isTableSuitable(table);
+    if (!suitable) {
+      const occCount = table.chairs.filter((c) => isOcc(c.key)).length;
+      if (occCount === table.chairs.length) {
+        setMapNotice(`Этот стол занят до ${timeEnd}. Попробуйте другое время`);
+      }
+      return;
+    }
     const free = freeChairsOf(table);
     if (!free.length) return;
     const toSelect = free.slice(0, guestCount || free.length);
@@ -268,21 +323,29 @@ export default function BookingMap({ onClose }) {
     setSelected(new Set(toSelect.map((c) => c.key)));
     setSuccess(false);
     setError(null);
-    if (wasEmpty)
+    setMapNotice(null);
+    if (wasEmpty) {
       setTimeout(
         () =>
-          formRef.current?.scrollIntoView({
-            behavior: "smooth",
-            block: "nearest",
-          }),
+          formRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" }),
         80,
       );
+    }
   };
 
-  const toggleChair = (chair, tableSuitable, e) => {
+  // ── Chair click ───────────────────────────────────────────────────────────
+  const toggleChair = (chair, table, tableSuitable, e) => {
     e.stopPropagation();
     if (isOcc(chair.key) || !tableSuitable) return;
-    const wasEmpty = selected.size === 0;
+
+    const cap = tableCap(table);
+    const fromThisTable = table.chairs.filter((c) => selected.has(c.key)).length;
+
+    if (!selected.has(chair.key) && fromThisTable >= cap) {
+      setMapNotice(`За этим столом только ${cap} ${pluralSeats(cap)}`);
+      return;
+    }
+
     setSelected((prev) => {
       const n = new Set(prev);
       n.has(chair.key) ? n.delete(chair.key) : n.add(chair.key);
@@ -290,32 +353,34 @@ export default function BookingMap({ onClose }) {
     });
     setSuccess(false);
     setError(null);
-    if (wasEmpty)
-      setTimeout(
-        () =>
-          formRef.current?.scrollIntoView({
-            behavior: "smooth",
-            block: "nearest",
-          }),
-        80,
-      );
+    setMapNotice(null);
   };
 
+  // ── Submit ────────────────────────────────────────────────────────────────
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!selected.size) return;
+
+    if (selected.size !== guestCount) {
+      setError(`Выберите ровно ${guestCount} ${pluralSeats(guestCount)}`);
+      return;
+    }
+
+    const nowOccupied = [...selected].filter((key) => occupied.has(key));
+    if (nowOccupied.length > 0) {
+      setError(
+        "Упс, пока вы заполняли форму места были заняты. Выберите другие места",
+      );
+      setSelected(new Set([...selected].filter((k) => !occupied.has(k))));
+      return;
+    }
+
     setSub(true);
     setError(null);
 
     const chairIds = [...selected]
       .map((key) => keyToChairId.current[key])
       .filter((id) => id != null);
-
-    console.log("[BookingMap] Выбранные стулья перед отправкой:", {
-      selectedKeys: [...selected],
-      chairIds,
-      keyToChairIdMap: { ...keyToChairId.current },
-    });
 
     try {
       const res = await fetch(`${API_URL}/reservations`, {
@@ -354,7 +419,7 @@ export default function BookingMap({ onClose }) {
     .filter(Boolean)
     .join(", ");
 
-  // ── Step 1: ввод количества гостей ────────────────────────────────────────
+  // ── Step 1: guest count input ─────────────────────────────────────────────
   if (step === "guests") {
     return (
       <div
@@ -387,10 +452,12 @@ export default function BookingMap({ onClose }) {
                   className="bm-guests-input"
                   type="number"
                   min="1"
-                  max="30"
                   placeholder="Число гостей"
                   value={guestInput}
-                  onChange={(e) => setGuestInput(e.target.value)}
+                  onChange={(e) => {
+                    setGuestInput(e.target.value);
+                    setGuestTooMany(false);
+                  }}
                   autoFocus
                 />
                 <button
@@ -401,6 +468,14 @@ export default function BookingMap({ onClose }) {
                   Далее
                 </button>
               </div>
+              {guestTooMany && (
+                <p className="bm-guests-overflow">
+                  Для большой компании позвоните нам, мы всё организуем:{" "}
+                  <a href={`tel:${BAR_PHONE.replace(/[\s()]/g, "")}`}>
+                    {BAR_PHONE}
+                  </a>
+                </p>
+              )}
             </form>
           </div>
         </div>
@@ -408,7 +483,7 @@ export default function BookingMap({ onClose }) {
     );
   }
 
-  // ── Step 2: карта ──────────────────────────────────────────────────────────
+  // ── Step 2: map ───────────────────────────────────────────────────────────
   return (
     <div
       className="bm-overlay"
@@ -433,7 +508,7 @@ export default function BookingMap({ onClose }) {
         </div>
 
         <div className="bm-modal__body">
-          {/* ── Фильтры даты/времени ── */}
+          {/* ── Фильтры ── */}
           <div className="bm-filters">
             <label className="bm-filter-field">
               <span>Дата</span>
@@ -441,7 +516,7 @@ export default function BookingMap({ onClose }) {
                 type="date"
                 value={date}
                 min={todayStr()}
-                onChange={(e) => setDate(e.target.value)}
+                onChange={handleDateChange}
               />
             </label>
             <label className="bm-filter-field">
@@ -449,7 +524,7 @@ export default function BookingMap({ onClose }) {
               <input
                 type="time"
                 value={timeStart}
-                onChange={(e) => setTimeStart(e.target.value)}
+                onChange={handleTimeStartChange}
               />
             </label>
             <label className="bm-filter-field">
@@ -457,14 +532,14 @@ export default function BookingMap({ onClose }) {
               <input
                 type="time"
                 value={timeEnd}
-                onChange={(e) => setTimeEnd(e.target.value)}
+                onChange={handleTimeEndChange}
               />
             </label>
           </div>
 
           <p className="bm-hint">
             {hasSuitableNonBar
-              ? `Нажмите на подходящий стол — выберем ${guestCount} ${guestCount === 1 ? "место" : guestCount < 5 ? "места" : "мест"} автоматически`
+              ? `Нажмите на подходящий стол — выберем ${guestCount} ${pluralSeats(guestCount)} автоматически`
               : "Бар всегда доступен — нажмите, чтобы занять место"}
           </p>
 
@@ -475,99 +550,57 @@ export default function BookingMap({ onClose }) {
               viewBox="0 0 990 905"
               xmlns="http://www.w3.org/2000/svg"
             >
-              {/* ── VIP комната ── */}
+              {/* VIP room */}
               <rect
                 className="bm-room bm-room--vip"
-                x="520"
-                y="28"
-                width="300"
-                height="272"
-                rx="6"
+                x="520" y="28" width="300" height="272" rx="6"
               />
-              <text className="bm-vip-badge" x="592" y="68">
-                VIP
-              </text>
-              {/* ── Основной зал ── */}
+              <text className="bm-vip-badge" x="592" y="68">VIP</text>
+              {/* Main hall */}
               <rect
                 className="bm-room bm-room--main"
-                x="58"
-                y="300"
-                width="762"
-                height="570"
-                rx="6"
+                x="58" y="300" width="762" height="570" rx="6"
               />
-              {/* Декор: стойка снизу слева */}
-              <rect
-                className="bm-shelf"
-                x="60"
-                y="760"
-                width="300"
-                height="4"
-                rx="3"
-              />
-              {/* Декор: разделитель у входа */}
-              <rect
-                className="bm-shelf"
-                rx="3"
-                x="500"
-                y="770"
-                width="4"
-                height="100"
-              />
-              {/* Основной вход */}
-              <line
-                className="bm-wall-erase"
-                x1="432"
-                y1="870"
-                x2="476"
-                y2="870"
-              />
+              {/* Decor */}
+              <rect className="bm-shelf" x="60" y="760" width="300" height="4" rx="3" />
+              <rect className="bm-shelf" rx="3" x="500" y="770" width="4" height="100" />
+              {/* Main entrance */}
+              <line className="bm-wall-erase" x1="432" y1="870" x2="476" y2="870" />
               <line className="bm-door" x1="432" y1="850" x2="432" y2="871" />
               <line className="bm-door" x1="476" y1="850" x2="476" y2="871" />
               <line className="bm-door" x1="432" y1="850" x2="476" y2="850" />
-              <text className="bm-entrance-label" x="454" y="893">
-                ВХОД
-              </text>
-              {/* Вход в VIP */}
-              <line
-                className="bm-wall-erase"
-                x1="618"
-                y1="304"
-                x2="668"
-                y2="304"
-              />
+              <text className="bm-entrance-label" x="454" y="893">ВХОД</text>
+              {/* VIP entrance */}
+              <line className="bm-wall-erase" x1="618" y1="304" x2="668" y2="304" />
               <line className="bm-door" x1="618" y1="284" x2="618" y2="305" />
               <line className="bm-door" x1="668" y1="284" x2="668" y2="305" />
               <line className="bm-door" x1="618" y1="284" x2="668" y2="284" />
-              <text className="bm-entrance-label" x="643" y="318">
-                ВХОД
-              </text>
+              <text className="bm-entrance-label" x="643" y="318">ВХОД</text>
 
-              {/* ── Столы + стулья ── */}
+              {/* ── Tables + chairs ── */}
               {TABLES.map((table) => {
                 const suitable = isTableSuitable(table);
                 const free = freeChairsOf(table);
                 const isBar = table.label === "BAR";
+                const cap = tableCap(table);
                 const tcx = table.x + table.width / 2;
                 const tcy = table.y + table.height / 2;
 
-                const occCount = table.chairs.filter((c) =>
-                  isOcc(c.key),
-                ).length;
+                const occCount = table.chairs.filter((c) => isOcc(c.key)).length;
                 const tableOccStatus =
                   occCount === 0
                     ? "free"
-                    : occCount === table.chairs.length
+                    : occCount === cap
                       ? "full"
                       : "partial";
 
-                // canClick: подходящий размер И есть свободные места
+                const selectedFromTable = table.chairs.filter((c) =>
+                  isSel(c.key),
+                ).length;
                 const canClick = suitable && free.length > 0;
-                const allSelFree =
-                  free.length > 0 && free.every((c) => selected.has(c.key));
+                const hasSelected = selectedFromTable > 0;
 
-                // Цвета прямоугольника стола
-                const rectFill = allSelFree
+                const rectFill = hasSelected
                   ? "rgba(244,165,46,0.18)"
                   : !suitable
                     ? "rgba(255,255,255,0.02)"
@@ -577,17 +610,17 @@ export default function BookingMap({ onClose }) {
                         ? "rgba(244,165,46,0.08)"
                         : "rgba(255,255,255,0.08)";
 
-                const rectStroke = allSelFree
+                const rectStroke = hasSelected
                   ? "#f4a52e"
                   : !suitable
                     ? "rgba(255,255,255,0.1)"
                     : tableOccStatus === "full"
-                      ? "rgba(223,59,44,0.55)"
+                      ? "rgba(223,59,44,0.7)"
                       : tableOccStatus === "partial"
                         ? "rgba(244,165,46,0.6)"
                         : "rgba(255,255,255,0.28)";
 
-                const labelFill = allSelFree
+                const labelFill = hasSelected
                   ? "#f4a52e"
                   : !suitable
                     ? "rgba(255,255,255,0.2)"
@@ -598,23 +631,33 @@ export default function BookingMap({ onClose }) {
                         : "rgba(255,255,255,0.6)";
 
                 const tableOpacity = !suitable ? 0.4 : 1;
+                const cursor = canClick
+                  ? "pointer"
+                  : tableOccStatus === "full"
+                    ? "not-allowed"
+                    : "default";
+
+                const showUntil = tableOccStatus === "full" && !isBar;
 
                 return (
                   <g key={table.id}>
                     <g
                       className={[
                         "bm-table",
-                        allSelFree ? "bm-table--all-selected" : "",
+                        hasSelected ? "bm-table--all-selected" : "",
                         !canClick ? "bm-table--disabled" : "",
                       ]
                         .join(" ")
                         .trim()}
-                      onClick={() => canClick && toggleTable(table)}
-                      style={{ cursor: canClick ? "pointer" : "default" }}
+                      onClick={() => toggleTable(table)}
+                      style={{ cursor }}
                       role="button"
                       aria-label={`${isBar ? "Бар" : `Стол ${table.label}`} — ${canClick ? "выбрать места" : "недоступен"}`}
                       aria-disabled={!canClick}
                     >
+                      {tableOccStatus === "full" && (
+                        <title>Стол занят до {timeEnd}</title>
+                      )}
                       <rect
                         x={table.x}
                         y={table.y}
@@ -623,12 +666,12 @@ export default function BookingMap({ onClose }) {
                         rx={4}
                         fill={rectFill}
                         stroke={rectStroke}
-                        strokeWidth={allSelFree ? 2 : 1.5}
+                        strokeWidth={hasSelected ? 2 : 1.5}
                         opacity={tableOpacity}
                       />
                       <text
                         x={tcx}
-                        y={tcy + 6}
+                        y={tcy + (showUntil ? -4 : 6)}
                         textAnchor="middle"
                         className="bm-tbl-name"
                         fill={labelFill}
@@ -638,14 +681,27 @@ export default function BookingMap({ onClose }) {
                       >
                         {table.label}
                       </text>
+                      {showUntil && (
+                        <text
+                          x={tcx}
+                          y={tcy + 10}
+                          textAnchor="middle"
+                          fill="rgba(223,59,44,0.7)"
+                          pointerEvents="none"
+                          fontSize="9"
+                          fontFamily="var(--font-display)"
+                          opacity={tableOpacity}
+                        >
+                          до {timeEnd}
+                        </text>
+                      )}
                     </g>
 
                     {table.chairs.map((chair) => {
                       const occ = isOcc(chair.key);
                       const sel = isSel(chair.key);
-
-                      // Стулья на недоступных столах — тусклые
                       const chairDim = !suitable;
+
                       const strokeColor = chairDim
                         ? "rgba(255,255,255,0.18)"
                         : sel
@@ -661,27 +717,21 @@ export default function BookingMap({ onClose }) {
                           key={chair.key}
                           className={[
                             "bm-chair",
-                            occ || !canClick ? "bm-chair--occ" : "",
+                            occ || !suitable ? "bm-chair--occ" : "",
                             sel ? "bm-chair--sel" : "",
                           ]
                             .join(" ")
                             .trim()}
-                          onClick={(e) =>
-                            toggleChair(chair, suitable && !occ, e)
-                          }
+                          onClick={(e) => toggleChair(chair, table, suitable, e)}
                           style={{
-                            cursor:
-                              occ || !suitable ? "default" : "pointer",
+                            cursor: occ || !suitable ? "default" : "pointer",
                           }}
                           role="button"
                           aria-label={`Место, ${occ ? "занято" : !suitable ? "недоступно" : sel ? "выбрано" : "свободно"}`}
                           aria-pressed={sel}
                           opacity={chairOpacity}
                         >
-                          {/* Тултип для занятых мест */}
-                          {occ && (
-                            <title>Занято до {timeEnd}</title>
-                          )}
+                          {occ && <title>Занято до {timeEnd}</title>}
                           {sel && (
                             <circle
                               cx={chair.x}
@@ -718,14 +768,17 @@ export default function BookingMap({ onClose }) {
               <span className="bm-leg bm-leg--dim">Не подходит</span>
             </div>
 
-            {/* ── Модалка "нет свободных мест" ── */}
+            {mapNotice && (
+              <div className="bm-map-notice">{mapNotice}</div>
+            )}
+
             {showNoSeatsModal && (
               <div className="bm-noseats-overlay">
                 <div className="bm-noseats-card">
                   <p className="bm-noseats-text">
-                    На это время свободных мест нет.
+                    На это время мест нет.
                     <br />
-                    Позвоните нам и мы подберём вариант:
+                    Позвоните нам:
                   </p>
                   <a
                     className="bm-noseats-phone"
@@ -800,7 +853,7 @@ export default function BookingMap({ onClose }) {
                       required
                       min={todayStr()}
                       value={date}
-                      onChange={(e) => setDate(e.target.value)}
+                      onChange={handleDateChange}
                     />
                   </label>
                   <label className="bm-field">
@@ -809,7 +862,7 @@ export default function BookingMap({ onClose }) {
                       type="time"
                       required
                       value={timeStart}
-                      onChange={(e) => setTimeStart(e.target.value)}
+                      onChange={handleTimeStartChange}
                     />
                   </label>
                   <label className="bm-field">
@@ -818,7 +871,7 @@ export default function BookingMap({ onClose }) {
                       type="time"
                       required
                       value={timeEnd}
-                      onChange={(e) => setTimeEnd(e.target.value)}
+                      onChange={handleTimeEndChange}
                     />
                   </label>
                   <label className="bm-field">
@@ -837,7 +890,7 @@ export default function BookingMap({ onClose }) {
                 <button
                   type="submit"
                   className="btn btn--primary btn--block bm-submit"
-                  disabled={submitting}
+                  disabled={submitting || selected.size !== guestCount}
                 >
                   {submitting ? "Бронируем…" : "Забронировать"}
                 </button>

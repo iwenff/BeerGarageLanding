@@ -590,6 +590,41 @@
 .bm-leg--dim::before     { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.2); }
 .bm-leg--partial::before { background: rgba(244, 165, 46, 0.55); }
 
+/* ── Гостей слишком много ── */
+.bm-guests-overflow {
+  font-family: var(--font-display);
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--amber);
+  line-height: 1.6;
+}
+
+.bm-guests-overflow a {
+  color: var(--amber);
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.bm-guests-overflow a:hover { opacity: 0.8; }
+
+/* ── Уведомление на карте ── */
+.bm-map-notice {
+  margin-top: 10px;
+  padding: 10px 16px;
+  background: rgba(223, 59, 44, 0.1);
+  border: 1px solid rgba(223, 59, 44, 0.3);
+  border-radius: var(--radius-sm);
+  color: var(--red);
+  font-family: var(--font-display);
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  text-align: center;
+  animation: bm-overlay-in 0.18s ease-out;
+}
+
 /* ── Адаптив ── */
 @media (max-width: 600px) {
   .bm-overlay { padding: 0; align-items: flex-end; }
