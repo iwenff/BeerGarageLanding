@@ -3,8 +3,8 @@ import "./BookingMap.css";
 
 const API_URL = "https://beergarage-back-production.up.railway.app";
 const CHAIR_R = 10;
+const BAR_PHONE = "+7 (999) 631-69-99";
 
-// id: null — стулья без бэкенд-ID пока не залит seed
 const RAW_TABLES = [
   {
     id: 1,
@@ -14,11 +14,11 @@ const RAW_TABLES = [
     width: 70,
     height: 100,
     chairs: [
-      { id: null, x: 80, y: 590 },
-      { id: null, x: 80, y: 630 },
-      { id: null, x: 200, y: 605 },
-      { id: null, x: 200, y: 655 },
-      { id: null, x: 80, y: 670 },
+      { x: 80, y: 590 },
+      { x: 80, y: 630 },
+      { x: 200, y: 605 },
+      { x: 200, y: 655 },
+      { x: 80, y: 670 },
     ],
   },
   {
@@ -29,14 +29,14 @@ const RAW_TABLES = [
     width: 210,
     height: 70,
     chairs: [
-      { id: null, x: 90, y: 325 },
-      { id: null, x: 140, y: 325 },
-      { id: null, x: 190, y: 325 },
-      { id: null, x: 240, y: 325 },
-      { id: null, x: 90, y: 435 },
-      { id: null, x: 140, y: 435 },
-      { id: null, x: 190, y: 435 },
-      { id: null, x: 240, y: 435 },
+      { x: 90, y: 325 },
+      { x: 140, y: 325 },
+      { x: 190, y: 325 },
+      { x: 240, y: 325 },
+      { x: 90, y: 435 },
+      { x: 140, y: 435 },
+      { x: 190, y: 435 },
+      { x: 240, y: 435 },
     ],
   },
   {
@@ -47,10 +47,10 @@ const RAW_TABLES = [
     width: 80,
     height: 80,
     chairs: [
-      { id: null, x: 440, y: 320 },
-      { id: null, x: 440, y: 360 },
-      { id: null, x: 565, y: 320 },
-      { id: null, x: 565, y: 360 },
+      { x: 440, y: 320 },
+      { x: 440, y: 360 },
+      { x: 565, y: 320 },
+      { x: 565, y: 360 },
     ],
   },
   // ── VIP ──
@@ -63,8 +63,8 @@ const RAW_TABLES = [
     width: 50,
     height: 80,
     chairs: [
-      { id: null, x: 545, y: 110 },
-      { id: null, x: 545, y: 230 },
+      { x: 545, y: 110 },
+      { x: 545, y: 230 },
     ],
   },
   {
@@ -76,12 +76,12 @@ const RAW_TABLES = [
     width: 110,
     height: 50,
     chairs: [
-      { id: null, x: 700, y: 55 },
-      { id: null, x: 740, y: 55 },
-      { id: null, x: 780, y: 55 },
-      { id: null, x: 710, y: 150 },
-      { id: null, x: 660, y: 105 },
-      { id: null, x: 760, y: 150 },
+      { x: 700, y: 55 },
+      { x: 740, y: 55 },
+      { x: 780, y: 55 },
+      { x: 710, y: 150 },
+      { x: 660, y: 105 },
+      { x: 760, y: 150 },
     ],
   },
   {
@@ -93,8 +93,8 @@ const RAW_TABLES = [
     width: 80,
     height: 50,
     chairs: [
-      { id: null, x: 690, y: 275 },
-      { id: null, x: 800, y: 275 },
+      { x: 690, y: 275 },
+      { x: 800, y: 275 },
     ],
   },
   // ── низ зала ──
@@ -106,8 +106,8 @@ const RAW_TABLES = [
     width: 80,
     height: 30,
     chairs: [
-      { id: null, x: 550, y: 820 },
-      { id: null, x: 590, y: 820 },
+      { x: 550, y: 820 },
+      { x: 590, y: 820 },
     ],
   },
   {
@@ -118,19 +118,18 @@ const RAW_TABLES = [
     width: 50,
     height: 450,
     chairs: [
-      { id: null, x: 630, y: 440 },
-      { id: null, x: 630, y: 485 },
-      { id: null, x: 630, y: 535 },
-      { id: null, x: 630, y: 585 },
-      { id: null, x: 630, y: 635 },
-      { id: null, x: 630, y: 685 },
-      { id: null, x: 630, y: 735 },
-      { id: null, x: 630, y: 785 },
+      { x: 630, y: 440 },
+      { x: 630, y: 485 },
+      { x: 630, y: 535 },
+      { x: 630, y: 585 },
+      { x: 630, y: 635 },
+      { x: 630, y: 685 },
+      { x: 630, y: 735 },
+      { x: 630, y: 785 },
     ],
   },
 ];
 
-// Уникальный ключ каждому стулу: tableId_chairIndex
 const TABLES = RAW_TABLES.map((t) => ({
   ...t,
   chairs: t.chairs.map((c, i) => ({ ...c, key: `${t.id}_${i}` })),
@@ -139,6 +138,11 @@ const TABLES = RAW_TABLES.map((t) => ({
 const todayStr = () => new Date().toISOString().slice(0, 10);
 
 export default function BookingMap({ onClose }) {
+  // Step 1: enter guest count; Step 2: pick table on map
+  const [step, setStep] = useState("guests");
+  const [guestInput, setGuestInput] = useState("");
+  const [guestCount, setGuestCount] = useState(0);
+
   const [occupied, setOccupied] = useState(new Set());
   const [selected, setSelected] = useState(new Set());
   const [date, setDate] = useState(todayStr);
@@ -149,6 +153,9 @@ export default function BookingMap({ onClose }) {
   const [success, setSuccess] = useState(false);
   const [apiError, setError] = useState(null);
   const formRef = useRef(null);
+
+  // frontChair.key → real backend chair id (populated after fetchStatuses)
+  const keyToChairId = useRef({});
 
   useEffect(() => {
     const fn = (e) => {
@@ -162,18 +169,6 @@ export default function BookingMap({ onClose }) {
     };
   }, [onClose]);
 
-  // chairId → chairKey (для маппинга ответа бэка когда придут реальные id)
-  const idToKey = useRef({});
-  useEffect(() => {
-    const m = {};
-    TABLES.forEach((t) =>
-      t.chairs.forEach((c) => {
-        if (c.id !== null) m[c.id] = c.key;
-      }),
-    );
-    idToKey.current = m;
-  }, []);
-
   const fetchStatuses = useCallback(async () => {
     if (!date || !timeStart || !timeEnd) return;
     try {
@@ -182,16 +177,22 @@ export default function BookingMap({ onClose }) {
       if (!res.ok) return;
       const data = await res.json();
       const occ = new Set();
+      const newMap = {};
       if (Array.isArray(data)) {
-        data.forEach((t) =>
-          t.chairs?.forEach((c) => {
-            if (c.status === "occupied") {
-              const key = idToKey.current[c.id];
-              if (key) occ.add(key);
-            }
-          }),
-        );
+        data.forEach((backendTable) => {
+          // Match frontend table by label
+          const frontTable = TABLES.find((t) => t.label === backendTable.label);
+          if (!frontTable) return;
+          // Match chairs by index order — backend and frontend must have same count
+          backendTable.chairs.forEach((backendChair, idx) => {
+            const frontChair = frontTable.chairs[idx];
+            if (!frontChair) return;
+            newMap[frontChair.key] = backendChair.id;
+            if (backendChair.status === "occupied") occ.add(frontChair.key);
+          });
+        });
       }
+      keyToChairId.current = newMap;
       setOccupied(occ);
       setSelected((prev) => {
         const next = new Set([...prev].filter((k) => !occ.has(k)));
@@ -211,9 +212,53 @@ export default function BookingMap({ onClose }) {
   const chairColor = (key) =>
     isSel(key) ? "#f4a52e" : isOcc(key) ? "#df3b2c" : "#22c55e";
 
-  const toggleChair = (chair, e) => {
+  // Smart seat logic
+  const freeChairsOf = (table) => table.chairs.filter((c) => !isOcc(c.key));
+
+  const isTableSuitable = (table) => {
+    if (table.label === "BAR") return true;
+    return freeChairsOf(table).length >= guestCount;
+  };
+
+  // Non-BAR tables sorted by ascending free seat count (smallest fit first)
+  const suitableNonBar = TABLES.filter(
+    (t) => t.label !== "BAR" && isTableSuitable(t),
+  ).sort((a, b) => freeChairsOf(a).length - freeChairsOf(b).length);
+
+  const hasSuitableNonBar = suitableNonBar.length > 0;
+
+  const handleGuestsNext = (e) => {
+    e.preventDefault();
+    const n = parseInt(guestInput, 10);
+    if (!n || n < 1) return;
+    setGuestCount(n);
+    setStep("map");
+  };
+
+  // Auto-select exactly guestCount free chairs from this table
+  const toggleTable = (table) => {
+    if (!isTableSuitable(table)) return;
+    const free = freeChairsOf(table);
+    if (!free.length) return;
+    const toSelect = free.slice(0, guestCount || free.length);
+    const wasEmpty = selected.size === 0;
+    setSelected(new Set(toSelect.map((c) => c.key)));
+    setSuccess(false);
+    setError(null);
+    if (wasEmpty)
+      setTimeout(
+        () =>
+          formRef.current?.scrollIntoView({
+            behavior: "smooth",
+            block: "nearest",
+          }),
+        80,
+      );
+  };
+
+  const toggleChair = (chair, tableSuitable, e) => {
     e.stopPropagation();
-    if (isOcc(chair.key)) return;
+    if (isOcc(chair.key) || !tableSuitable) return;
     const wasEmpty = selected.size === 0;
     setSelected((prev) => {
       const n = new Set(prev);
@@ -233,41 +278,22 @@ export default function BookingMap({ onClose }) {
       );
   };
 
-  const toggleTable = (table) => {
-    const free = table.chairs.filter((c) => !isOcc(c.key));
-    if (!free.length) return;
-    const allSel = free.every((c) => selected.has(c.key));
-    const wasEmpty = selected.size === 0;
-    setSelected((prev) => {
-      const n = new Set(prev);
-      allSel
-        ? free.forEach((c) => n.delete(c.key))
-        : free.forEach((c) => n.add(c.key));
-      return n;
-    });
-    setSuccess(false);
-    setError(null);
-    if (wasEmpty && !allSel)
-      setTimeout(
-        () =>
-          formRef.current?.scrollIntoView({
-            behavior: "smooth",
-            block: "nearest",
-          }),
-        80,
-      );
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!selected.size) return;
     setSub(true);
     setError(null);
-    const chairIds = TABLES.flatMap((t) =>
-      t.chairs
-        .filter((c) => c.id !== null && selected.has(c.key))
-        .map((c) => c.id),
-    );
+
+    const chairIds = [...selected]
+      .map((key) => keyToChairId.current[key])
+      .filter((id) => id != null);
+
+    console.log("[BookingMap] Выбранные стулья перед отправкой:", {
+      selectedKeys: [...selected],
+      chairIds,
+      keyToChairIdMap: { ...keyToChairId.current },
+    });
+
     try {
       const res = await fetch(`${API_URL}/reservations`, {
         method: "POST",
@@ -305,6 +331,61 @@ export default function BookingMap({ onClose }) {
     .filter(Boolean)
     .join(", ");
 
+  // ── Step 1: enter guest count ──────────────────────────────────────────────
+  if (step === "guests") {
+    return (
+      <div
+        className="bm-overlay"
+        onClick={onClose}
+        role="dialog"
+        aria-modal="true"
+      >
+        <div className="bm-modal" onClick={(e) => e.stopPropagation()}>
+          <div className="bm-modal__head">
+            <div>
+              <p className="bm-modal__eyebrow">Beer Garage</p>
+              <h2 className="bm-modal__title">Бронирование</h2>
+            </div>
+            <button
+              className="bm-modal__close"
+              onClick={onClose}
+              type="button"
+              aria-label="Закрыть"
+            >
+              ✕
+            </button>
+          </div>
+
+          <div className="bm-modal__body">
+            <form className="bm-guests-step" onSubmit={handleGuestsNext}>
+              <p className="bm-guests-title">Сколько вас человек?</p>
+              <div className="bm-guests-row">
+                <input
+                  className="bm-guests-input"
+                  type="number"
+                  min="1"
+                  max="30"
+                  placeholder="Число гостей"
+                  value={guestInput}
+                  onChange={(e) => setGuestInput(e.target.value)}
+                  autoFocus
+                />
+                <button
+                  type="submit"
+                  className="btn btn--primary bm-guests-btn"
+                  disabled={!guestInput || parseInt(guestInput, 10) < 1}
+                >
+                  Далее
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Step 2: map ────────────────────────────────────────────────────────────
   return (
     <div
       className="bm-overlay"
@@ -357,8 +438,17 @@ export default function BookingMap({ onClose }) {
             </label>
           </div>
 
+          {!hasSuitableNonBar && (
+            <div className="bm-no-seats">
+              Свободных мест нет. Позвоните нам:{" "}
+              <a href={`tel:${BAR_PHONE.replace(/\s/g, "")}`}>{BAR_PHONE}</a>
+            </div>
+          )}
+
           <p className="bm-hint">
-            Нажмите на стул — выбрать место, на стол — выбрать все свободные
+            {hasSuitableNonBar
+              ? `Нажмите на подходящий стол — выберем ${guestCount} ${guestCount === 1 ? "место" : guestCount < 5 ? "места" : "мест"} автоматически`
+              : "Бар всегда доступен — нажмите, чтобы занять место"}
           </p>
 
           <div className="bm-map-wrap">
@@ -421,7 +511,6 @@ export default function BookingMap({ onClose }) {
                 ВХОД
               </text>
               {/* Вход в VIP */}
-
               <line
                 className="bm-wall-erase"
                 x1="618"
@@ -438,21 +527,30 @@ export default function BookingMap({ onClose }) {
 
               {/* ── Столы + стулья ── */}
               {TABLES.map((table) => {
-                const free = table.chairs.filter((c) => !isOcc(c.key));
+                const suitable = isTableSuitable(table);
+                const free = freeChairsOf(table);
                 const allSel =
                   free.length > 0 && free.every((c) => selected.has(c.key));
                 const isBar = table.label === "BAR";
                 const tcx = table.x + table.width / 2;
                 const tcy = table.y + table.height / 2;
+                const disabled = !suitable || !free.length;
 
                 return (
                   <g key={table.id}>
                     <g
-                      className={`bm-table${allSel ? " bm-table--all-selected" : ""}`}
-                      onClick={() => toggleTable(table)}
-                      style={{ cursor: free.length ? "pointer" : "default" }}
+                      className={[
+                        "bm-table",
+                        allSel ? "bm-table--all-selected" : "",
+                        disabled ? "bm-table--disabled" : "",
+                      ]
+                        .join(" ")
+                        .trim()}
+                      onClick={() => !disabled && toggleTable(table)}
+                      style={{ cursor: disabled ? "default" : "pointer" }}
                       role="button"
-                      aria-label={`${isBar ? "Бар" : `Стол ${table.label}`} — выбрать все свободные`}
+                      aria-label={`${isBar ? "Бар" : `Стол ${table.label}`} — ${disabled ? "недоступен" : "выбрать места"}`}
+                      aria-disabled={disabled}
                     >
                       <rect
                         x={table.x}
@@ -461,21 +559,37 @@ export default function BookingMap({ onClose }) {
                         height={table.height}
                         rx={4}
                         fill={
-                          allSel
-                            ? "rgba(244,165,46,0.18)"
-                            : "rgba(255,255,255,0.08)"
+                          disabled
+                            ? "rgba(255,255,255,0.02)"
+                            : allSel
+                              ? "rgba(244,165,46,0.18)"
+                              : "rgba(255,255,255,0.08)"
                         }
-                        stroke={allSel ? "#f4a52e" : "rgba(255,255,255,0.28)"}
+                        stroke={
+                          disabled
+                            ? "rgba(255,255,255,0.1)"
+                            : allSel
+                              ? "#f4a52e"
+                              : "rgba(255,255,255,0.28)"
+                        }
                         strokeWidth={allSel ? 2 : 1.5}
+                        opacity={disabled ? 0.4 : 1}
                       />
                       <text
                         x={tcx}
-                        y={isBar ? tcy + 6 : tcy + 6}
+                        y={tcy + 6}
                         textAnchor="middle"
                         className="bm-tbl-name"
-                        fill={allSel ? "#f4a52e" : "rgba(255,255,255,0.6)"}
+                        fill={
+                          disabled
+                            ? "rgba(255,255,255,0.2)"
+                            : allSel
+                              ? "#f4a52e"
+                              : "rgba(255,255,255,0.6)"
+                        }
                         writingMode={isBar ? "vertical-rl" : undefined}
                         pointerEvents="none"
+                        opacity={disabled ? 0.4 : 1}
                       >
                         {table.label}
                       </text>
@@ -484,21 +598,28 @@ export default function BookingMap({ onClose }) {
                     {table.chairs.map((chair) => {
                       const occ = isOcc(chair.key);
                       const sel = isSel(chair.key);
-                      const c = chairColor(chair.key);
+                      const c = disabled
+                        ? "rgba(255,255,255,0.2)"
+                        : chairColor(chair.key);
                       return (
                         <g
                           key={chair.key}
                           className={[
                             "bm-chair",
-                            occ ? "bm-chair--occ" : "",
+                            occ || disabled ? "bm-chair--occ" : "",
                             sel ? "bm-chair--sel" : "",
                           ]
                             .join(" ")
                             .trim()}
-                          onClick={(e) => toggleChair(chair, e)}
-                          style={{ cursor: occ ? "default" : "pointer" }}
+                          onClick={(e) =>
+                            toggleChair(chair, suitable && !occ, e)
+                          }
+                          style={{
+                            cursor:
+                              occ || disabled ? "default" : "pointer",
+                          }}
                           role="button"
-                          aria-label={`Место, ${occ ? "занято" : sel ? "выбрано" : "свободно"}`}
+                          aria-label={`Место, ${occ ? "занято" : disabled ? "недоступно" : sel ? "выбрано" : "свободно"}`}
                           aria-pressed={sel}
                         >
                           {sel && (
@@ -517,9 +638,10 @@ export default function BookingMap({ onClose }) {
                             cy={chair.y}
                             r={CHAIR_R}
                             fill={c}
-                            fillOpacity={occ ? 0.15 : 0.28}
+                            fillOpacity={occ || disabled ? 0.1 : 0.28}
                             stroke={c}
                             strokeWidth={sel ? 2.5 : 1.5}
+                            opacity={disabled ? 0.35 : 1}
                           />
                         </g>
                       );
@@ -533,6 +655,7 @@ export default function BookingMap({ onClose }) {
               <span className="bm-leg bm-leg--free">Свободно</span>
               <span className="bm-leg bm-leg--occ">Занято</span>
               <span className="bm-leg bm-leg--sel">Выбрано</span>
+              <span className="bm-leg bm-leg--dim">Не подходит</span>
             </div>
           </div>
 
@@ -547,8 +670,12 @@ export default function BookingMap({ onClose }) {
               <p className="bm-form-title">
                 Бронирование
                 <span className="bm-form-cap">
-                  · {count}{" "}
-                  {count === 1 ? "место" : count < 5 ? "места" : "мест"}
+                  · {guestCount}{" "}
+                  {guestCount === 1
+                    ? "гость"
+                    : guestCount < 5
+                      ? "гостя"
+                      : "гостей"}
                 </span>
               </p>
               {summary && <p className="bm-form-summary">{summary}</p>}
@@ -612,7 +739,7 @@ export default function BookingMap({ onClose }) {
                     <input
                       type="number"
                       readOnly
-                      value={count}
+                      value={guestCount}
                       className="bm-field-readonly"
                     />
                   </label>

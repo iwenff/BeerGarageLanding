@@ -469,6 +469,76 @@
 
 .bm-submit { font-size: 16px; padding: 17px; }
 
+/* ── Шаг ввода гостей ── */
+.bm-guests-step {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 16px 0 8px;
+}
+
+.bm-guests-title {
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  font-size: clamp(1.2rem, 3vw, 1.6rem);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--cream);
+}
+
+.bm-guests-row {
+  display: flex;
+  gap: 12px;
+  align-items: stretch;
+}
+
+.bm-guests-input {
+  flex: 1;
+  background: var(--panel);
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius-sm);
+  color: var(--cream);
+  font-family: var(--font-body);
+  font-size: 20px;
+  padding: 14px 18px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  color-scheme: dark;
+  max-width: 200px;
+}
+
+.bm-guests-input:focus {
+  border-color: var(--amber);
+  box-shadow: 0 0 0 3px rgba(244, 165, 46, 0.14);
+}
+
+.bm-guests-btn {
+  font-size: 15px;
+  padding: 14px 32px;
+  white-space: nowrap;
+}
+
+/* ── Нет мест ── */
+.bm-no-seats {
+  background: rgba(223, 59, 44, 0.1);
+  border: 1px solid rgba(223, 59, 44, 0.32);
+  border-radius: var(--radius-sm);
+  padding: 16px 20px;
+  color: #f87171;
+  font-family: var(--font-display);
+  font-size: 14px;
+  letter-spacing: 0.04em;
+}
+
+.bm-no-seats a {
+  color: var(--amber);
+  text-decoration: underline;
+  white-space: nowrap;
+}
+
+/* ── Легенда: не подходит ── */
+.bm-leg--dim::before { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.2); }
+
 /* ── Адаптив ── */
 @media (max-width: 600px) {
   .bm-overlay { padding: 0; align-items: flex-end; }
