@@ -26,10 +26,13 @@ export default function AdminLogin() {
         return
       }
       if (!res.ok) { setError('Ошибка сервера'); return }
-      const { token, user } = await res.json()
+      const data = await res.json()
+      console.log('login response:', data)
+      const token = data.token ?? data.access_token ?? data.accessToken
+      const user = data.user ?? data
       localStorage.setItem('token', token)
-      localStorage.setItem('role', user.role)
-      localStorage.setItem('name', user.name)
+      localStorage.setItem('role', user.role ?? '')
+      localStorage.setItem('name', user.name ?? '')
       navigate('/admin')
     } catch {
       setError('Не удалось подключиться к серверу')
