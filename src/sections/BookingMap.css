@@ -173,6 +173,22 @@
   stroke: rgba(255, 255, 255, 0.09);
 }
 
+.bm-room--main {
+  fill: rgba(255, 255, 255, 0.02);
+  stroke: #4c8ddb;
+  stroke-width: 2;
+}
+
+.bm-divider {
+  stroke: rgba(255, 255, 255, 0.14);
+  stroke-width: 1;
+}
+
+.bm-wall-erase {
+  stroke: var(--panel);
+  stroke-width: 3;
+}
+
 .bm-room-label {
   font-family: var(--font-display);
   font-size: 13px;
@@ -191,6 +207,39 @@
   letter-spacing: 0.22em;
 }
 
+.bm-room-label--kitchen {
+  font-size: 18px;
+  font-weight: 600;
+  fill: rgba(255, 255, 255, 0.22);
+  letter-spacing: 0.1em;
+}
+
+.bm-room-label--small {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+}
+
+.bm-door {
+  stroke: rgba(255, 255, 255, 0.45);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+}
+
+/* Декоративный стул (null id) — виден, но не кликабелен */
+.bm-chair--visual {
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+.bm-tbl-cap {
+  font-family: var(--font-display);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  pointer-events: none;
+  user-select: none;
+}
+
 .bm-entrance-gap {
   stroke: var(--bg-2);
   stroke-width: 7;
@@ -207,19 +256,43 @@
   user-select: none;
 }
 
+.bm-vip-badge {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  fill: rgba(244, 165, 46, 0.5);
+  pointer-events: none;
+  user-select: none;
+}
+
+.bm-shelf {
+  fill: rgba(255, 255, 255, 0.08);
+  stroke: rgba(255, 255, 255, 0.18);
+  stroke-width: 1;
+}
+
+.bm-shelf-label {
+  font-family: var(--font-display);
+  font-size: 10px;
+  text-anchor: middle;
+  fill: rgba(255, 255, 255, 0.2);
+  letter-spacing: 0.1em;
+  pointer-events: none;
+  user-select: none;
+  text-transform: uppercase;
+}
+
 /* ── SVG — столы ── */
 .bm-table { transition: opacity 0.15s; }
 
-.bm-table:not(.bm-table--occupied):not(.bm-table--bar):hover rect {
-  filter: brightness(1.3);
+.bm-table:hover .bm-table-rect {
+  filter: brightness(1.4);
 }
 
-.bm-table--selected rect {
-  filter: drop-shadow(0 0 10px rgba(244, 165, 46, 0.55));
+.bm-table--all-selected .bm-table-rect {
+  filter: drop-shadow(0 0 8px rgba(244, 165, 46, 0.4));
 }
-
-.bm-table--occupied { opacity: 0.8; }
-.bm-table--bar { cursor: default !important; }
 
 .bm-tbl-name {
   font-family: var(--font-display);
@@ -231,12 +304,27 @@
   user-select: none;
 }
 
-.bm-tbl-cap {
-  font-family: var(--font-body);
-  font-size: 10px;
-  opacity: 0.8;
+.bm-tbl-name--vip {
+  font-size: 18px;
+  letter-spacing: 0.2em;
+}
+
+/* ── SVG — стулья ── */
+.bm-chair {
+  transition: opacity 0.12s;
+}
+
+.bm-chair:not(.bm-chair--occ):hover circle:first-child {
+  filter: brightness(1.35);
+}
+
+.bm-chair--sel circle:first-child {
+  filter: drop-shadow(0 0 6px rgba(244, 165, 46, 0.7));
+}
+
+.bm-chair--occ {
   pointer-events: none;
-  user-select: none;
+  opacity: 0.7;
 }
 
 /* ── Легенда ── */
@@ -314,6 +402,21 @@
   font-weight: 400;
   color: var(--muted);
   margin-left: 8px;
+}
+
+.bm-form-summary {
+  font-size: 13px;
+  color: var(--amber);
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 14px;
+  margin-top: -10px;
+}
+
+.bm-field-readonly {
+  opacity: 0.7;
+  cursor: default;
 }
 
 .bm-form-grid {

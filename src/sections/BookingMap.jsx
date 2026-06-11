@@ -1,243 +1,557 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
-import './BookingMap.css'
+import { useState, useEffect, useCallback, useRef } from "react";
+import "./BookingMap.css";
 
-const API_URL = 'https://beergarage-back-production.up.railway.app'
+const API_URL = "https://beergarage-back-production.up.railway.app";
+const CHAIR_R = 10;
 
-const TABLES = [
-  { id: 1, label: '1',   capacity: 4, x: 300, y: 200, width: 80,  height: 60  },
-  { id: 2, label: '2',   capacity: 4, x: 105, y: 320, width: 100, height: 60  },
-  { id: 3, label: '3',   capacity: 6, x: 105, y: 430, width: 110, height: 70  },
-  { id: 4, label: 'VIP', capacity: 6, x: 480, y: 58,  width: 130, height: 100 },
-  { id: 5, label: 'BAR', capacity: 6, x: 530, y: 300, width: 50,  height: 160 },
-]
+// id: null — стулья без бэкенд-ID пока не залит seed
+const RAW_TABLES = [
+  {
+    id: 1,
+    label: "1",
+    x: 105,
+    y: 580,
+    width: 70,
+    height: 100,
+    chairs: [
+      { id: null, x: 80, y: 590 },
+      { id: null, x: 80, y: 630 },
+      { id: null, x: 200, y: 605 },
+      { id: null, x: 200, y: 655 },
+      { id: null, x: 80, y: 670 },
+    ],
+  },
+  {
+    id: 2,
+    label: "2",
+    x: 60,
+    y: 345,
+    width: 210,
+    height: 70,
+    chairs: [
+      { id: null, x: 90, y: 325 },
+      { id: null, x: 140, y: 325 },
+      { id: null, x: 190, y: 325 },
+      { id: null, x: 240, y: 325 },
+      { id: null, x: 90, y: 435 },
+      { id: null, x: 140, y: 435 },
+      { id: null, x: 190, y: 435 },
+      { id: null, x: 240, y: 435 },
+    ],
+  },
+  {
+    id: 3,
+    label: "3",
+    x: 465,
+    y: 300,
+    width: 80,
+    height: 80,
+    chairs: [
+      { id: null, x: 440, y: 320 },
+      { id: null, x: 440, y: 360 },
+      { id: null, x: 565, y: 320 },
+      { id: null, x: 565, y: 360 },
+    ],
+  },
+  // ── VIP ──
+  {
+    id: 4,
+    label: "4",
+    vip: true,
+    x: 520,
+    y: 130,
+    width: 50,
+    height: 80,
+    chairs: [
+      { id: null, x: 545, y: 110 },
+      { id: null, x: 545, y: 230 },
+    ],
+  },
+  {
+    id: 5,
+    label: "5",
+    vip: true,
+    x: 680,
+    y: 80,
+    width: 110,
+    height: 50,
+    chairs: [
+      { id: null, x: 700, y: 55 },
+      { id: null, x: 740, y: 55 },
+      { id: null, x: 780, y: 55 },
+      { id: null, x: 710, y: 150 },
+      { id: null, x: 660, y: 105 },
+      { id: null, x: 760, y: 150 },
+    ],
+  },
+  {
+    id: 6,
+    label: "6",
+    vip: true,
+    x: 705,
+    y: 250,
+    width: 80,
+    height: 50,
+    chairs: [
+      { id: null, x: 690, y: 275 },
+      { id: null, x: 800, y: 275 },
+    ],
+  },
+  // ── низ зала ──
+  {
+    id: 7,
+    label: "7",
+    x: 530,
+    y: 840,
+    width: 80,
+    height: 30,
+    chairs: [
+      { id: null, x: 550, y: 820 },
+      { id: null, x: 590, y: 820 },
+    ],
+  },
+  {
+    id: 8,
+    label: "BAR",
+    x: 650,
+    y: 420,
+    width: 50,
+    height: 450,
+    chairs: [
+      { id: null, x: 630, y: 440 },
+      { id: null, x: 630, y: 485 },
+      { id: null, x: 630, y: 535 },
+      { id: null, x: 630, y: 585 },
+      { id: null, x: 630, y: 635 },
+      { id: null, x: 630, y: 685 },
+      { id: null, x: 630, y: 735 },
+      { id: null, x: 630, y: 785 },
+    ],
+  },
+];
 
-const todayStr = () => new Date().toISOString().slice(0, 10)
+// Уникальный ключ каждому стулу: tableId_chairIndex
+const TABLES = RAW_TABLES.map((t) => ({
+  ...t,
+  chairs: t.chairs.map((c, i) => ({ ...c, key: `${t.id}_${i}` })),
+}));
+
+const todayStr = () => new Date().toISOString().slice(0, 10);
 
 export default function BookingMap({ onClose }) {
-  const [statuses, setStatuses]     = useState({})
-  const [selectedIdx, setSelected]  = useState(null)
-  const [date, setDate]             = useState(todayStr)
-  const [timeStart, setTimeStart]   = useState('18:00')
-  const [timeEnd, setTimeEnd]       = useState('21:00')
-  const [form, setForm]             = useState({ name: '', phone: '', guests: 1 })
-  const [submitting, setSubmitting] = useState(false)
-  const [success, setSuccess]       = useState(false)
-  const [apiError, setApiError]     = useState(null)
-  const formRef   = useRef(null)
-  const scrollRef = useRef(null)
+  const [occupied, setOccupied] = useState(new Set());
+  const [selected, setSelected] = useState(new Set());
+  const [date, setDate] = useState(todayStr);
+  const [timeStart, setTimeStart] = useState("18:00");
+  const [timeEnd, setTimeEnd] = useState("21:00");
+  const [form, setForm] = useState({ name: "", phone: "" });
+  const [submitting, setSub] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [apiError, setError] = useState(null);
+  const formRef = useRef(null);
 
-  // Закрытие по Escape, блокировка прокрутки
   useEffect(() => {
-    const onKey = (e) => { if (e.key === 'Escape') onClose() }
-    document.addEventListener('keydown', onKey)
-    document.body.style.overflow = 'hidden'
+    const fn = (e) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", fn);
+    document.body.style.overflow = "hidden";
     return () => {
-      document.removeEventListener('keydown', onKey)
-      document.body.style.overflow = ''
-    }
-  }, [onClose])
+      document.removeEventListener("keydown", fn);
+      document.body.style.overflow = "";
+    };
+  }, [onClose]);
+
+  // chairId → chairKey (для маппинга ответа бэка когда придут реальные id)
+  const idToKey = useRef({});
+  useEffect(() => {
+    const m = {};
+    TABLES.forEach((t) =>
+      t.chairs.forEach((c) => {
+        if (c.id !== null) m[c.id] = c.key;
+      }),
+    );
+    idToKey.current = m;
+  }, []);
 
   const fetchStatuses = useCallback(async () => {
-    if (!date || !timeStart || !timeEnd) return
+    if (!date || !timeStart || !timeEnd) return;
     try {
-      const qs = new URLSearchParams({ date, timeStart, timeEnd })
-      const res = await fetch(`${API_URL}/tables?${qs}`)
-      if (!res.ok) return
-      const data = await res.json()
-      const map = {}
-      if (Array.isArray(data)) data.forEach(t => { map[t.id] = t.status ?? 'free' })
-      setStatuses(map)
-    } catch { /* бэк может быть ещё не поднят */ }
-  }, [date, timeStart, timeEnd])
-
-  useEffect(() => { fetchStatuses() }, [fetchStatuses])
-
-  const tableStatus = (t) => (t.id ? statuses[t.id] ?? 'free' : 'free')
-
-  const tableColor = (t, idx) => {
-    if (idx === selectedIdx) return '#f4a52e'
-    return tableStatus(t) === 'occupied' ? '#df3b2c' : '#22c55e'
-  }
-
-  const handleTableClick = (idx) => {
-    const t = TABLES[idx]
-    if (tableStatus(t) === 'occupied') return
-    const next = idx === selectedIdx ? null : idx
-    setSelected(next)
-    setSuccess(false)
-    setApiError(null)
-    if (next !== null) {
-      setTimeout(() => formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 80)
+      const qs = new URLSearchParams({ date, timeStart, timeEnd });
+      const res = await fetch(`${API_URL}/tables?${qs}`);
+      if (!res.ok) return;
+      const data = await res.json();
+      const occ = new Set();
+      if (Array.isArray(data)) {
+        data.forEach((t) =>
+          t.chairs?.forEach((c) => {
+            if (c.status === "occupied") {
+              const key = idToKey.current[c.id];
+              if (key) occ.add(key);
+            }
+          }),
+        );
+      }
+      setOccupied(occ);
+      setSelected((prev) => {
+        const next = new Set([...prev].filter((k) => !occ.has(k)));
+        return next.size !== prev.size ? next : prev;
+      });
+    } catch {
+      /* keep current */
     }
-  }
+  }, [date, timeStart, timeEnd]);
+
+  useEffect(() => {
+    fetchStatuses();
+  }, [fetchStatuses]);
+
+  const isOcc = (key) => occupied.has(key);
+  const isSel = (key) => selected.has(key);
+  const chairColor = (key) =>
+    isSel(key) ? "#f4a52e" : isOcc(key) ? "#df3b2c" : "#22c55e";
+
+  const toggleChair = (chair, e) => {
+    e.stopPropagation();
+    if (isOcc(chair.key)) return;
+    const wasEmpty = selected.size === 0;
+    setSelected((prev) => {
+      const n = new Set(prev);
+      n.has(chair.key) ? n.delete(chair.key) : n.add(chair.key);
+      return n;
+    });
+    setSuccess(false);
+    setError(null);
+    if (wasEmpty)
+      setTimeout(
+        () =>
+          formRef.current?.scrollIntoView({
+            behavior: "smooth",
+            block: "nearest",
+          }),
+        80,
+      );
+  };
+
+  const toggleTable = (table) => {
+    const free = table.chairs.filter((c) => !isOcc(c.key));
+    if (!free.length) return;
+    const allSel = free.every((c) => selected.has(c.key));
+    const wasEmpty = selected.size === 0;
+    setSelected((prev) => {
+      const n = new Set(prev);
+      allSel
+        ? free.forEach((c) => n.delete(c.key))
+        : free.forEach((c) => n.add(c.key));
+      return n;
+    });
+    setSuccess(false);
+    setError(null);
+    if (wasEmpty && !allSel)
+      setTimeout(
+        () =>
+          formRef.current?.scrollIntoView({
+            behavior: "smooth",
+            block: "nearest",
+          }),
+        80,
+      );
+  };
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
-    if (selectedIdx === null) return
-    const t = TABLES[selectedIdx]
-    setSubmitting(true)
-    setApiError(null)
+    e.preventDefault();
+    if (!selected.size) return;
+    setSub(true);
+    setError(null);
+    const chairIds = TABLES.flatMap((t) =>
+      t.chairs
+        .filter((c) => c.id !== null && selected.has(c.key))
+        .map((c) => c.id),
+    );
     try {
       const res = await fetch(`${API_URL}/reservations`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          tableId:     t.id,
+          chairIds,
           date,
           timeStart,
           timeEnd,
-          guestsCount: Number(form.guests),
-          guestName:   form.name,
-          guestPhone:  form.phone,
+          guestName: form.name,
+          guestPhone: form.phone,
         }),
-      })
+      });
       if (!res.ok) {
-        const body = await res.json().catch(() => ({}))
-        throw new Error(body.message || `Ошибка ${res.status}`)
+        const b = await res.json().catch(() => ({}));
+        throw new Error(b.message || `Ошибка ${res.status}`);
       }
-      setSuccess(true)
-      setSelected(null)
-      setForm({ name: '', phone: '', guests: 1 })
-      await fetchStatuses()
+      setSuccess(true);
+      setSelected(new Set());
+      setForm({ name: "", phone: "" });
+      await fetchStatuses();
     } catch (err) {
-      setApiError(err.message)
+      setError(err.message);
     } finally {
-      setSubmitting(false)
+      setSub(false);
     }
-  }
+  };
 
-  const sel = selectedIdx !== null ? TABLES[selectedIdx] : null
+  const count = selected.size;
+  const summary = TABLES.map((t) => {
+    const n = t.chairs.filter((c) => selected.has(c.key)).length;
+    if (!n) return null;
+    return `${t.label === "BAR" ? "Бар" : `Стол ${t.label}`} ×${n}`;
+  })
+    .filter(Boolean)
+    .join(", ");
 
   return (
-    <div className="bm-overlay" onClick={onClose} role="dialog" aria-modal="true" aria-label="Бронирование стола">
-      <div className="bm-modal" onClick={e => e.stopPropagation()}>
-
-        {/* Шапка */}
+    <div
+      className="bm-overlay"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+    >
+      <div className="bm-modal" onClick={(e) => e.stopPropagation()}>
         <div className="bm-modal__head">
           <div>
             <p className="bm-modal__eyebrow">Beer Garage</p>
-            <h2 className="bm-modal__title">Забронировать стол</h2>
+            <h2 className="bm-modal__title">Выбрать места</h2>
           </div>
-          <button className="bm-modal__close" onClick={onClose} aria-label="Закрыть" type="button">✕</button>
+          <button
+            className="bm-modal__close"
+            onClick={onClose}
+            type="button"
+            aria-label="Закрыть"
+          >
+            ✕
+          </button>
         </div>
 
-        {/* Прокручиваемое тело */}
-        <div className="bm-modal__body" ref={scrollRef}>
-
-          {/* Фильтры даты и времени */}
+        <div className="bm-modal__body">
           <div className="bm-filters">
             <label className="bm-filter-field">
               <span>Дата</span>
-              <input type="date" value={date} min={todayStr()} onChange={e => setDate(e.target.value)} />
+              <input
+                type="date"
+                value={date}
+                min={todayStr()}
+                onChange={(e) => setDate(e.target.value)}
+              />
             </label>
             <label className="bm-filter-field">
               <span>Время с</span>
-              <input type="time" value={timeStart} onChange={e => setTimeStart(e.target.value)} />
+              <input
+                type="time"
+                value={timeStart}
+                onChange={(e) => setTimeStart(e.target.value)}
+              />
             </label>
             <label className="bm-filter-field">
               <span>Время по</span>
-              <input type="time" value={timeEnd} onChange={e => setTimeEnd(e.target.value)} />
+              <input
+                type="time"
+                value={timeEnd}
+                onChange={(e) => setTimeEnd(e.target.value)}
+              />
             </label>
           </div>
 
-          <p className="bm-hint">Нажмите на свободный стол, чтобы выбрать его</p>
+          <p className="bm-hint">
+            Нажмите на стул — выбрать место, на стол — выбрать все свободные
+          </p>
 
-          {/* Карта зала */}
           <div className="bm-map-wrap">
             <svg
               className="bm-svg"
-              viewBox="0 0 700 590"
+              viewBox="0 0 990 905"
               xmlns="http://www.w3.org/2000/svg"
-              aria-label="Карта зала Beer Garage"
             >
-              {/* Основной зал */}
-              <rect className="bm-room" x="65" y="183" width="590" height="395" rx="8" />
+              {/* ── VIP комната ── */}
+              <rect
+                className="bm-room bm-room--vip"
+                x="520"
+                y="28"
+                width="300"
+                height="272"
+                rx="6"
+              />
+              <text className="bm-vip-badge" x="592" y="68">
+                VIP
+              </text>
+              {/* ── Основной зал ── */}
+              <rect
+                className="bm-room bm-room--main"
+                x="58"
+                y="300"
+                width="762"
+                height="570"
+                rx="6"
+              />
+              {/* Декор: стойка снизу слева */}
+              <rect
+                className="bm-shelf"
+                x="60"
+                y="760"
+                width="300"
+                height="4"
+                rx="3"
+              />
+              {/* Декор: разделитель у входа */}
+              <rect
+                className="bm-shelf"
+                rx="3"
+                x="500"
+                y="770"
+                width="4"
+                height="100"
+              />
+              {/* Основной вход */}
+              <line
+                className="bm-wall-erase"
+                x1="432"
+                y1="870"
+                x2="476"
+                y2="870"
+              />
+              <line className="bm-door" x1="432" y1="850" x2="432" y2="871" />
+              <line className="bm-door" x1="476" y1="850" x2="476" y2="871" />
+              <line className="bm-door" x1="432" y1="850" x2="476" y2="850" />
+              <text className="bm-entrance-label" x="454" y="893">
+                ВХОД
+              </text>
+              {/* Вход в VIP */}
 
-              {/* VIP комната */}
-              <rect className="bm-room bm-room--vip" x="453" y="20" width="202" height="170" rx="8" />
-              <text className="bm-room-label bm-room-label--vip" x="554" y="46">VIP</text>
+              <line
+                className="bm-wall-erase"
+                x1="618"
+                y1="304"
+                x2="668"
+                y2="304"
+              />
+              <line className="bm-door" x1="618" y1="284" x2="618" y2="305" />
+              <line className="bm-door" x1="668" y1="284" x2="668" y2="305" />
+              <line className="bm-door" x1="618" y1="284" x2="668" y2="284" />
+              <text className="bm-entrance-label" x="643" y="318">
+                ВХОД
+              </text>
 
-              {/* Туалеты */}
-              <rect className="bm-room bm-room--service" x="90"  y="20" width="130" height="88" rx="6" />
-              <rect className="bm-room bm-room--service" x="232" y="20" width="130" height="88" rx="6" />
-              <text className="bm-room-label" x="155" y="68">Туалет</text>
-              <text className="bm-room-label" x="297" y="68">Туалет</text>
+              {/* ── Столы + стулья ── */}
+              {TABLES.map((table) => {
+                const free = table.chairs.filter((c) => !isOcc(c.key));
+                const allSel =
+                  free.length > 0 && free.every((c) => selected.has(c.key));
+                const isBar = table.label === "BAR";
+                const tcx = table.x + table.width / 2;
+                const tcy = table.y + table.height / 2;
 
-              {/* Вход */}
-              <line className="bm-entrance-gap" x1="315" y1="578" x2="415" y2="578" />
-              <text className="bm-entrance-label" x="365" y="596">ВХОД</text>
-
-              {/* Столы */}
-              {TABLES.map((t, idx) => {
-                const color    = tableColor(t, idx)
-                const occupied = tableStatus(t) === 'occupied'
-                const isBar    = t.label === 'BAR'
-                const cx       = t.x + t.width  / 2
-                const cy       = t.y + t.height / 2
                 return (
-                  <g
-                    key={idx}
-                    className={[
-                      'bm-table',
-                      occupied          ? 'bm-table--occupied' : '',
-                      isBar             ? 'bm-table--bar'      : '',
-                      idx === selectedIdx ? 'bm-table--selected': '',
-                    ].join(' ').trim()}
-                    onClick={() => handleTableClick(idx)}
-                    style={{ cursor: occupied ? 'not-allowed' : 'pointer' }}
-                    role={isBar ? undefined : 'button'}
-                    aria-label={isBar ? undefined : `Стол ${t.label}, ${t.capacity} человек`}
-                  >
-                    <rect
-                      x={t.x} y={t.y}
-                      width={t.width} height={t.height}
-                      rx="6"
-                      fill={color}
-                      fillOpacity={isBar ? 0.12 : 0.18}
-                      stroke={color}
-                      strokeWidth={idx === selectedIdx ? 2.5 : 1.5}
-                    />
-                    <text
-                      x={cx}
-                      y={isBar ? cy + 6 : cy - 2}
-                      textAnchor="middle"
-                      className="bm-tbl-name"
-                      fill={color}
+                  <g key={table.id}>
+                    <g
+                      className={`bm-table${allSel ? " bm-table--all-selected" : ""}`}
+                      onClick={() => toggleTable(table)}
+                      style={{ cursor: free.length ? "pointer" : "default" }}
+                      role="button"
+                      aria-label={`${isBar ? "Бар" : `Стол ${table.label}`} — выбрать все свободные`}
                     >
-                      {t.label === 'BAR' ? 'BAR' : `Стол ${t.label}`}
-                    </text>
-                    {!isBar && (
-                      <text x={cx} y={cy + 14} textAnchor="middle" className="bm-tbl-cap" fill={color}>
-                        {t.capacity} чел.
+                      <rect
+                        x={table.x}
+                        y={table.y}
+                        width={table.width}
+                        height={table.height}
+                        rx={4}
+                        fill={
+                          allSel
+                            ? "rgba(244,165,46,0.18)"
+                            : "rgba(255,255,255,0.08)"
+                        }
+                        stroke={allSel ? "#f4a52e" : "rgba(255,255,255,0.28)"}
+                        strokeWidth={allSel ? 2 : 1.5}
+                      />
+                      <text
+                        x={tcx}
+                        y={isBar ? tcy + 6 : tcy + 6}
+                        textAnchor="middle"
+                        className="bm-tbl-name"
+                        fill={allSel ? "#f4a52e" : "rgba(255,255,255,0.6)"}
+                        writingMode={isBar ? "vertical-rl" : undefined}
+                        pointerEvents="none"
+                      >
+                        {table.label}
                       </text>
-                    )}
+                    </g>
+
+                    {table.chairs.map((chair) => {
+                      const occ = isOcc(chair.key);
+                      const sel = isSel(chair.key);
+                      const c = chairColor(chair.key);
+                      return (
+                        <g
+                          key={chair.key}
+                          className={[
+                            "bm-chair",
+                            occ ? "bm-chair--occ" : "",
+                            sel ? "bm-chair--sel" : "",
+                          ]
+                            .join(" ")
+                            .trim()}
+                          onClick={(e) => toggleChair(chair, e)}
+                          style={{ cursor: occ ? "default" : "pointer" }}
+                          role="button"
+                          aria-label={`Место, ${occ ? "занято" : sel ? "выбрано" : "свободно"}`}
+                          aria-pressed={sel}
+                        >
+                          {sel && (
+                            <circle
+                              cx={chair.x}
+                              cy={chair.y}
+                              r={CHAIR_R + 5}
+                              fill="none"
+                              stroke="#f4a52e"
+                              strokeWidth="1"
+                              opacity="0.35"
+                            />
+                          )}
+                          <circle
+                            cx={chair.x}
+                            cy={chair.y}
+                            r={CHAIR_R}
+                            fill={c}
+                            fillOpacity={occ ? 0.15 : 0.28}
+                            stroke={c}
+                            strokeWidth={sel ? 2.5 : 1.5}
+                          />
+                        </g>
+                      );
+                    })}
                   </g>
-                )
+                );
               })}
             </svg>
 
-            {/* Легенда */}
             <div className="bm-legend">
-              <span className="bm-leg bm-leg--free">Свободен</span>
-              <span className="bm-leg bm-leg--occ">Занят</span>
-              <span className="bm-leg bm-leg--sel">Выбран</span>
+              <span className="bm-leg bm-leg--free">Свободно</span>
+              <span className="bm-leg bm-leg--occ">Занято</span>
+              <span className="bm-leg bm-leg--sel">Выбрано</span>
             </div>
           </div>
 
-          {/* Успешное бронирование */}
           {success && (
             <div className="bm-success">
               Бронь принята! Мы свяжемся с вами для подтверждения.
             </div>
           )}
 
-          {/* Форма — появляется после выбора стола */}
-          {sel && (
+          {count > 0 && (
             <div className="bm-form-wrap" ref={formRef}>
               <p className="bm-form-title">
-                {sel.label === 'VIP' ? 'VIP-зал' : sel.label === 'BAR' ? 'Барная зона' : `Стол ${sel.label}`}
-                <span className="bm-form-cap">· до {sel.capacity} чел.</span>
+                Бронирование
+                <span className="bm-form-cap">
+                  · {count}{" "}
+                  {count === 1 ? "место" : count < 5 ? "места" : "мест"}
+                </span>
               </p>
+              {summary && <p className="bm-form-summary">{summary}</p>}
 
               <form className="bm-form" onSubmit={handleSubmit} noValidate>
                 <div className="bm-form-grid">
@@ -248,10 +562,11 @@ export default function BookingMap({ onClose }) {
                       required
                       placeholder="Ваше имя"
                       value={form.name}
-                      onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, name: e.target.value }))
+                      }
                     />
                   </label>
-
                   <label className="bm-field">
                     <span>Телефон</span>
                     <input
@@ -259,10 +574,11 @@ export default function BookingMap({ onClose }) {
                       required
                       placeholder="+7 900 000-00-00"
                       value={form.phone}
-                      onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, phone: e.target.value }))
+                      }
                     />
                   </label>
-
                   <label className="bm-field">
                     <span>Дата</span>
                     <input
@@ -270,39 +586,34 @@ export default function BookingMap({ onClose }) {
                       required
                       min={todayStr()}
                       value={date}
-                      onChange={e => setDate(e.target.value)}
+                      onChange={(e) => setDate(e.target.value)}
                     />
                   </label>
-
                   <label className="bm-field">
                     <span>Время с</span>
                     <input
                       type="time"
                       required
                       value={timeStart}
-                      onChange={e => setTimeStart(e.target.value)}
+                      onChange={(e) => setTimeStart(e.target.value)}
                     />
                   </label>
-
                   <label className="bm-field">
                     <span>Время по</span>
                     <input
                       type="time"
                       required
                       value={timeEnd}
-                      onChange={e => setTimeEnd(e.target.value)}
+                      onChange={(e) => setTimeEnd(e.target.value)}
                     />
                   </label>
-
                   <label className="bm-field">
                     <span>Количество гостей</span>
                     <input
                       type="number"
-                      required
-                      min="1"
-                      max={sel.capacity}
-                      value={form.guests}
-                      onChange={e => setForm(f => ({ ...f, guests: e.target.value }))}
+                      readOnly
+                      value={count}
+                      className="bm-field-readonly"
                     />
                   </label>
                 </div>
@@ -314,14 +625,13 @@ export default function BookingMap({ onClose }) {
                   className="btn btn--primary btn--block bm-submit"
                   disabled={submitting}
                 >
-                  {submitting ? 'Бронируем…' : 'Забронировать'}
+                  {submitting ? "Бронируем…" : "Забронировать"}
                 </button>
               </form>
             </div>
           )}
-
         </div>
       </div>
     </div>
-  )
+  );
 }
