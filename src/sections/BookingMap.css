@@ -518,26 +518,77 @@
   white-space: nowrap;
 }
 
-/* ── Нет мест ── */
-.bm-no-seats {
-  background: rgba(223, 59, 44, 0.1);
-  border: 1px solid rgba(223, 59, 44, 0.32);
+/* ── Модалка "нет свободных мест" ── */
+.bm-noseats-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  background: rgba(0, 0, 0, 0.78);
+  backdrop-filter: blur(6px);
   border-radius: var(--radius-sm);
-  padding: 16px 20px;
-  color: #f87171;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: bm-overlay-in 0.22s ease-out;
+}
+
+.bm-noseats-card {
+  background: var(--bg-2);
+  border: 1px solid rgba(223, 59, 44, 0.38);
+  border-radius: var(--radius);
+  padding: 32px 28px;
+  max-width: 340px;
+  width: 90%;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  box-shadow: 0 24px 60px -12px rgba(0, 0, 0, 0.8);
+  animation: bm-modal-in 0.28s cubic-bezier(.2,.8,.2,1) both;
+}
+
+.bm-noseats-text {
+  color: var(--cream);
+  font-size: 15px;
+  line-height: 1.6;
   font-family: var(--font-display);
-  font-size: 14px;
+  text-transform: uppercase;
   letter-spacing: 0.04em;
 }
 
-.bm-no-seats a {
+.bm-noseats-phone {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 700;
   color: var(--amber);
-  text-decoration: underline;
-  white-space: nowrap;
+  text-decoration: none;
+  letter-spacing: 0.04em;
+  transition: opacity 0.2s;
+}
+.bm-noseats-phone:hover { opacity: 0.8; }
+
+.bm-noseats-dismiss {
+  font-family: var(--font-display);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius-sm);
+  padding: 10px 20px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+.bm-noseats-dismiss:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--cream);
 }
 
-/* ── Легенда: не подходит ── */
-.bm-leg--dim::before { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.2); }
+/* ── Легенда: цвета ── */
+.bm-leg--dim::before     { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.2); }
+.bm-leg--partial::before { background: rgba(244, 165, 46, 0.55); }
 
 /* ── Адаптив ── */
 @media (max-width: 600px) {

@@ -137,8 +137,23 @@ const TABLES = RAW_TABLES.map((t) => ({
 
 const todayStr = () => new Date().toISOString().slice(0, 10);
 
+// Returns [timeStart, timeEnd] initialised to current time rounded up to next 30-min slot
+function getInitTimes() {
+  const now = new Date();
+  const h = now.getHours();
+  const m = now.getMinutes();
+  const startTotalMin = m < 30 ? h * 60 + 30 : (h + 1) * 60;
+  const endTotalMin = startTotalMin + 120;
+  const fmt = (totalMin) => {
+    const hh = Math.floor(totalMin / 60) % 24;
+    const mm = totalMin % 60;
+    return `${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
+  };
+  return [fmt(startTotalMin), fmt(endTotalMin)];
+}
+
 export default function BookingMap({ onClose }) {
-  // Step 1: enter guest count; Step 2: pick table on map
+  // ── шаг 1: ввод гостей; шаг 2: карта ──────────────────────────────────────
   const [step, setStep] = useState("guests");
   const [guestInput, setGuestInput] = useState("");
   const [guestCount, setGuestCount] = useState(0);
@@ -146,15 +161,17 @@ export default function BookingMap({ onClose }) {
   const [occupied, setOccupied] = useState(new Set());
   const [selected, setSelected] = useState(new Set());
   const [date, setDate] = useState(todayStr);
-  const [timeStart, setTimeStart] = useState("18:00");
-  const [timeEnd, setTimeEnd] = useState("21:00");
+  const [timeStart, setTimeStart] = useState(() => getInitTimes()[0]);
+  const [timeEnd, setTimeEnd] = useState(() => getInitTimes()[1]);
   const [form, setForm] = useState({ name: "", phone: "" });
   const [submitting, setSub] = useState(false);
   const [success, setSuccess] = useState(false);
   const [apiError, setError] = useState(null);
-  const formRef = useRef(null);
+  // управление модалкой "нет мест"
+  const [noSeatsDismissed, setNoSeatsDismissed] = useState(false);
 
-  // frontChair.key → real backend chair id (populated after fetchStatuses)
+  const formRef = useRef(null);
+  // frontChair.key → real backend chair id
   const keyToChairId = useRef({});
 
   useEffect(() => {
@@ -171,6 +188,8 @@ export default function BookingMap({ onClose }) {
 
   const fetchStatuses = useCallback(async () => {
     if (!date || !timeStart || !timeEnd) return;
+    // при каждом новом запросе сбрасываем dismissed, чтобы модалка могла открыться снова
+    setNoSeatsDismissed(false);
     try {
       const qs = new URLSearchParams({ date, timeStart, timeEnd });
       const res = await fetch(`${API_URL}/tables?${qs}`);
@@ -180,10 +199,8 @@ export default function BookingMap({ onClose }) {
       const newMap = {};
       if (Array.isArray(data)) {
         data.forEach((backendTable) => {
-          // Match frontend table by label
           const frontTable = TABLES.find((t) => t.label === backendTable.label);
           if (!frontTable) return;
-          // Match chairs by index order — backend and frontend must have same count
           backendTable.chairs.forEach((backendChair, idx) => {
             const frontChair = frontTable.chairs[idx];
             if (!frontChair) return;
@@ -209,24 +226,30 @@ export default function BookingMap({ onClose }) {
 
   const isOcc = (key) => occupied.has(key);
   const isSel = (key) => selected.has(key);
-  const chairColor = (key) =>
-    isSel(key) ? "#f4a52e" : isOcc(key) ? "#df3b2c" : "#22c55e";
 
-  // Smart seat logic
+  // ── умная фильтрация столов ────────────────────────────────────────────────
   const freeChairsOf = (table) => table.chairs.filter((c) => !isOcc(c.key));
+
+  // Находим минимальное количество свободных мест среди столов, которые вообще
+  // могут вместить гостей. Только столы с этим минимумом считаются подходящими.
+  const nonBarCandidates = TABLES.filter(
+    (t) => t.label !== "BAR" && freeChairsOf(t).length >= guestCount,
+  );
+  const minFreeSeats =
+    nonBarCandidates.length > 0
+      ? Math.min(...nonBarCandidates.map((t) => freeChairsOf(t).length))
+      : Infinity;
 
   const isTableSuitable = (table) => {
     if (table.label === "BAR") return true;
-    return freeChairsOf(table).length >= guestCount;
+    const free = freeChairsOf(table).length;
+    return free >= guestCount && free === minFreeSeats;
   };
 
-  // Non-BAR tables sorted by ascending free seat count (smallest fit first)
-  const suitableNonBar = TABLES.filter(
-    (t) => t.label !== "BAR" && isTableSuitable(t),
-  ).sort((a, b) => freeChairsOf(a).length - freeChairsOf(b).length);
+  const hasSuitableNonBar = nonBarCandidates.length > 0;
+  const showNoSeatsModal = step === "map" && !hasSuitableNonBar && !noSeatsDismissed;
 
-  const hasSuitableNonBar = suitableNonBar.length > 0;
-
+  // ── handlers ───────────────────────────────────────────────────────────────
   const handleGuestsNext = (e) => {
     e.preventDefault();
     const n = parseInt(guestInput, 10);
@@ -235,7 +258,7 @@ export default function BookingMap({ onClose }) {
     setStep("map");
   };
 
-  // Auto-select exactly guestCount free chairs from this table
+  // Авто-выбор ровно guestCount свободных мест за этим столом
   const toggleTable = (table) => {
     if (!isTableSuitable(table)) return;
     const free = freeChairsOf(table);
@@ -331,7 +354,7 @@ export default function BookingMap({ onClose }) {
     .filter(Boolean)
     .join(", ");
 
-  // ── Step 1: enter guest count ──────────────────────────────────────────────
+  // ── Step 1: ввод количества гостей ────────────────────────────────────────
   if (step === "guests") {
     return (
       <div
@@ -385,7 +408,7 @@ export default function BookingMap({ onClose }) {
     );
   }
 
-  // ── Step 2: map ────────────────────────────────────────────────────────────
+  // ── Step 2: карта ──────────────────────────────────────────────────────────
   return (
     <div
       className="bm-overlay"
@@ -410,6 +433,7 @@ export default function BookingMap({ onClose }) {
         </div>
 
         <div className="bm-modal__body">
+          {/* ── Фильтры даты/времени ── */}
           <div className="bm-filters">
             <label className="bm-filter-field">
               <span>Дата</span>
@@ -438,20 +462,14 @@ export default function BookingMap({ onClose }) {
             </label>
           </div>
 
-          {!hasSuitableNonBar && (
-            <div className="bm-no-seats">
-              Свободных мест нет. Позвоните нам:{" "}
-              <a href={`tel:${BAR_PHONE.replace(/\s/g, "")}`}>{BAR_PHONE}</a>
-            </div>
-          )}
-
           <p className="bm-hint">
             {hasSuitableNonBar
-              ? `Нажмите на подходящий стол — выберем ${guestCount} ${guestCount === 1 ? "место" : guestCount < 5 ? "места" : "мест"} автоматически`
+              ? `Нажмите на подходящий стол — выберем ${guestCount} ${guestCount === 1 ? "место" : guestCount < 5 ? "места" : "мест"} автоматически`
               : "Бар всегда доступен — нажмите, чтобы занять место"}
           </p>
 
-          <div className="bm-map-wrap">
+          {/* ── Карта ── */}
+          <div className="bm-map-wrap" style={{ position: "relative" }}>
             <svg
               className="bm-svg"
               viewBox="0 0 990 905"
@@ -529,28 +547,73 @@ export default function BookingMap({ onClose }) {
               {TABLES.map((table) => {
                 const suitable = isTableSuitable(table);
                 const free = freeChairsOf(table);
-                const allSel =
-                  free.length > 0 && free.every((c) => selected.has(c.key));
                 const isBar = table.label === "BAR";
                 const tcx = table.x + table.width / 2;
                 const tcy = table.y + table.height / 2;
-                const disabled = !suitable || !free.length;
+
+                const occCount = table.chairs.filter((c) =>
+                  isOcc(c.key),
+                ).length;
+                const tableOccStatus =
+                  occCount === 0
+                    ? "free"
+                    : occCount === table.chairs.length
+                      ? "full"
+                      : "partial";
+
+                // canClick: подходящий размер И есть свободные места
+                const canClick = suitable && free.length > 0;
+                const allSelFree =
+                  free.length > 0 && free.every((c) => selected.has(c.key));
+
+                // Цвета прямоугольника стола
+                const rectFill = allSelFree
+                  ? "rgba(244,165,46,0.18)"
+                  : !suitable
+                    ? "rgba(255,255,255,0.02)"
+                    : tableOccStatus === "full"
+                      ? "rgba(223,59,44,0.08)"
+                      : tableOccStatus === "partial"
+                        ? "rgba(244,165,46,0.08)"
+                        : "rgba(255,255,255,0.08)";
+
+                const rectStroke = allSelFree
+                  ? "#f4a52e"
+                  : !suitable
+                    ? "rgba(255,255,255,0.1)"
+                    : tableOccStatus === "full"
+                      ? "rgba(223,59,44,0.55)"
+                      : tableOccStatus === "partial"
+                        ? "rgba(244,165,46,0.6)"
+                        : "rgba(255,255,255,0.28)";
+
+                const labelFill = allSelFree
+                  ? "#f4a52e"
+                  : !suitable
+                    ? "rgba(255,255,255,0.2)"
+                    : tableOccStatus === "full"
+                      ? "rgba(223,59,44,0.7)"
+                      : tableOccStatus === "partial"
+                        ? "rgba(244,165,46,0.85)"
+                        : "rgba(255,255,255,0.6)";
+
+                const tableOpacity = !suitable ? 0.4 : 1;
 
                 return (
                   <g key={table.id}>
                     <g
                       className={[
                         "bm-table",
-                        allSel ? "bm-table--all-selected" : "",
-                        disabled ? "bm-table--disabled" : "",
+                        allSelFree ? "bm-table--all-selected" : "",
+                        !canClick ? "bm-table--disabled" : "",
                       ]
                         .join(" ")
                         .trim()}
-                      onClick={() => !disabled && toggleTable(table)}
-                      style={{ cursor: disabled ? "default" : "pointer" }}
+                      onClick={() => canClick && toggleTable(table)}
+                      style={{ cursor: canClick ? "pointer" : "default" }}
                       role="button"
-                      aria-label={`${isBar ? "Бар" : `Стол ${table.label}`} — ${disabled ? "недоступен" : "выбрать места"}`}
-                      aria-disabled={disabled}
+                      aria-label={`${isBar ? "Бар" : `Стол ${table.label}`} — ${canClick ? "выбрать места" : "недоступен"}`}
+                      aria-disabled={!canClick}
                     >
                       <rect
                         x={table.x}
@@ -558,38 +621,20 @@ export default function BookingMap({ onClose }) {
                         width={table.width}
                         height={table.height}
                         rx={4}
-                        fill={
-                          disabled
-                            ? "rgba(255,255,255,0.02)"
-                            : allSel
-                              ? "rgba(244,165,46,0.18)"
-                              : "rgba(255,255,255,0.08)"
-                        }
-                        stroke={
-                          disabled
-                            ? "rgba(255,255,255,0.1)"
-                            : allSel
-                              ? "#f4a52e"
-                              : "rgba(255,255,255,0.28)"
-                        }
-                        strokeWidth={allSel ? 2 : 1.5}
-                        opacity={disabled ? 0.4 : 1}
+                        fill={rectFill}
+                        stroke={rectStroke}
+                        strokeWidth={allSelFree ? 2 : 1.5}
+                        opacity={tableOpacity}
                       />
                       <text
                         x={tcx}
                         y={tcy + 6}
                         textAnchor="middle"
                         className="bm-tbl-name"
-                        fill={
-                          disabled
-                            ? "rgba(255,255,255,0.2)"
-                            : allSel
-                              ? "#f4a52e"
-                              : "rgba(255,255,255,0.6)"
-                        }
+                        fill={labelFill}
                         writingMode={isBar ? "vertical-rl" : undefined}
                         pointerEvents="none"
-                        opacity={disabled ? 0.4 : 1}
+                        opacity={tableOpacity}
                       >
                         {table.label}
                       </text>
@@ -598,15 +643,25 @@ export default function BookingMap({ onClose }) {
                     {table.chairs.map((chair) => {
                       const occ = isOcc(chair.key);
                       const sel = isSel(chair.key);
-                      const c = disabled
-                        ? "rgba(255,255,255,0.2)"
-                        : chairColor(chair.key);
+
+                      // Стулья на недоступных столах — тусклые
+                      const chairDim = !suitable;
+                      const strokeColor = chairDim
+                        ? "rgba(255,255,255,0.18)"
+                        : sel
+                          ? "#f4a52e"
+                          : occ
+                            ? "#df3b2c"
+                            : "#22c55e";
+                      const fillOpacity = chairDim ? 0.08 : occ ? 0.15 : 0.28;
+                      const chairOpacity = chairDim ? 0.35 : 1;
+
                       return (
                         <g
                           key={chair.key}
                           className={[
                             "bm-chair",
-                            occ || disabled ? "bm-chair--occ" : "",
+                            occ || !canClick ? "bm-chair--occ" : "",
                             sel ? "bm-chair--sel" : "",
                           ]
                             .join(" ")
@@ -616,12 +671,17 @@ export default function BookingMap({ onClose }) {
                           }
                           style={{
                             cursor:
-                              occ || disabled ? "default" : "pointer",
+                              occ || !suitable ? "default" : "pointer",
                           }}
                           role="button"
-                          aria-label={`Место, ${occ ? "занято" : disabled ? "недоступно" : sel ? "выбрано" : "свободно"}`}
+                          aria-label={`Место, ${occ ? "занято" : !suitable ? "недоступно" : sel ? "выбрано" : "свободно"}`}
                           aria-pressed={sel}
+                          opacity={chairOpacity}
                         >
+                          {/* Тултип для занятых мест */}
+                          {occ && (
+                            <title>Занято до {timeEnd}</title>
+                          )}
                           {sel && (
                             <circle
                               cx={chair.x}
@@ -637,11 +697,10 @@ export default function BookingMap({ onClose }) {
                             cx={chair.x}
                             cy={chair.y}
                             r={CHAIR_R}
-                            fill={c}
-                            fillOpacity={occ || disabled ? 0.1 : 0.28}
-                            stroke={c}
+                            fill={strokeColor}
+                            fillOpacity={fillOpacity}
+                            stroke={strokeColor}
                             strokeWidth={sel ? 2.5 : 1.5}
-                            opacity={disabled ? 0.35 : 1}
                           />
                         </g>
                       );
@@ -655,8 +714,35 @@ export default function BookingMap({ onClose }) {
               <span className="bm-leg bm-leg--free">Свободно</span>
               <span className="bm-leg bm-leg--occ">Занято</span>
               <span className="bm-leg bm-leg--sel">Выбрано</span>
+              <span className="bm-leg bm-leg--partial">Частично занято</span>
               <span className="bm-leg bm-leg--dim">Не подходит</span>
             </div>
+
+            {/* ── Модалка "нет свободных мест" ── */}
+            {showNoSeatsModal && (
+              <div className="bm-noseats-overlay">
+                <div className="bm-noseats-card">
+                  <p className="bm-noseats-text">
+                    На это время свободных мест нет.
+                    <br />
+                    Позвоните нам и мы подберём вариант:
+                  </p>
+                  <a
+                    className="bm-noseats-phone"
+                    href={`tel:${BAR_PHONE.replace(/[\s()]/g, "")}`}
+                  >
+                    {BAR_PHONE}
+                  </a>
+                  <button
+                    className="bm-noseats-dismiss"
+                    type="button"
+                    onClick={() => setNoSeatsDismissed(true)}
+                  >
+                    Изменить дату или время
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           {success && (
@@ -670,7 +756,8 @@ export default function BookingMap({ onClose }) {
               <p className="bm-form-title">
                 Бронирование
                 <span className="bm-form-cap">
-                  · {guestCount}{" "}
+                  ·{" "}
+                  {guestCount}{" "}
                   {guestCount === 1
                     ? "гость"
                     : guestCount < 5
