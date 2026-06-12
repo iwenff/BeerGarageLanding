@@ -5,10 +5,11 @@ import { TABLES } from '../../shared/constants/tables.js'
 import '../admin.css'
 
 const CHAIR_R = 10
+const DEFAULT_BLOCK_COLOR = '#facc15'
 
-type ChairStatus = 'free' | 'occupied' | 'reserved'
+type ChairStatus = 'free' | 'blocked' | 'reserved'
+type ChairOverride = { status: ChairStatus; blockColor?: string }
 
-// Текущее время → строка HH:MM
 function nowTime() {
   const d = new Date()
   const h = String(d.getHours()).padStart(2, '0')
@@ -28,16 +29,12 @@ export default function AdminMap() {
   const [timeStart, setTimeStart] = useState(initStart)
   const [timeEnd,   setTimeEnd]   = useState(() => addH(initStart, 2))
 
-  // key → actual status from API
-  const [apiStatus, setApiStatus] = useState<Map<string, ChairStatus>>(new Map())
-  // key → admin override (pending save)
-  const [overrides, setOverrides] = useState<Map<string, ChairStatus>>(new Map())
-  // key → backend chair id
-  const [keyToId,   setKeyToId]   = useState<Map<string, number>>(new Map())
-  // label → backend table id
-  const [labelToTableId, setLabelToTableId] = useState<Map<string, number>>(new Map())
+  const [apiStatus,     setApiStatus]     = useState<Map<string, ChairStatus>>(new Map())
+  const [apiBlockColors,setApiBlockColors]= useState<Map<string, string>>(new Map())
+  const [overrides,     setOverrides]     = useState<Map<string, ChairOverride>>(new Map())
+  const [keyToId,       setKeyToId]       = useState<Map<string, number>>(new Map())
+  const [labelToTableId,setLabelToTableId]= useState<Map<string, number>>(new Map())
 
-  // Selected table for bottom panel
   const [activeTable, setActiveTable] = useState<(typeof TABLES)[0] | null>(null)
 
   const fetchStatuses = useCallback(async () => {
@@ -46,10 +43,14 @@ export default function AdminMap() {
       const qs  = new URLSearchParams({ date, timeStart, timeEnd })
       const res = await api.get(`/tables?${qs}`)
       if (!res.ok) return
-      const data = await res.json() as Array<{ id: number; label: string; chairs: Array<{ id: number; label: string; status: string }> }>
-      const statusMap = new Map<string, ChairStatus>()
-      const idMap     = new Map<string, number>()
-      const tableMap  = new Map<string, number>()
+      const data = await res.json() as Array<{
+        id: number; label: string
+        chairs: Array<{ id: number; label: string; status: string; blockColor?: string | null }>
+      }>
+      const statusMap     = new Map<string, ChairStatus>()
+      const blockColorMap = new Map<string, string>()
+      const idMap         = new Map<string, number>()
+      const tableMap      = new Map<string, number>()
       if (Array.isArray(data)) {
         data.forEach((bt) => {
           tableMap.set(bt.label, bt.id)
@@ -60,17 +61,20 @@ export default function AdminMap() {
             if (!fc) return
             idMap.set(fc.key, bc.id)
             statusMap.set(fc.key, bc.status as ChairStatus)
+            if (bc.status === 'blocked' && bc.blockColor) {
+              blockColorMap.set(fc.key, bc.blockColor)
+            }
           })
         })
       }
       setApiStatus(statusMap)
+      setApiBlockColors(blockColorMap)
       setKeyToId(idMap)
       setLabelToTableId(tableMap)
-      // Сбросить переопределения которые теперь совпадают с API
       setOverrides((prev) => {
         const next = new Map(prev)
         for (const [k, v] of next) {
-          if (statusMap.get(k) === v) next.delete(k)
+          if (statusMap.get(k) === v.status) next.delete(k)
         }
         return next
       })
@@ -80,31 +84,57 @@ export default function AdminMap() {
   useEffect(() => { fetchStatuses() }, [fetchStatuses])
 
   const getStatus = (key: string): ChairStatus =>
-    overrides.get(key) ?? apiStatus.get(key) ?? 'free'
+    overrides.get(key)?.status ?? apiStatus.get(key) ?? 'free'
+
+  const getBlockColor = (key: string): string =>
+    overrides.get(key)?.blockColor ?? apiBlockColors.get(key) ?? DEFAULT_BLOCK_COLOR
 
   const toggleChair = (key: string) => {
     const cur = getStatus(key)
-    if (cur === 'occupied') return          // нельзя снять реальную бронь
-    const next: ChairStatus = cur === 'free' ? 'reserved' : 'free'
-    setOverrides((prev) => new Map(prev).set(key, next))
+    if (cur === 'reserved') return
+    const nextStatus: ChairStatus = cur === 'free' ? 'blocked' : 'free'
+    setOverrides((prev) => {
+      const next = new Map(prev)
+      next.set(key, nextStatus === 'blocked'
+        ? { status: 'blocked', blockColor: getBlockColor(key) }
+        : { status: 'free' }
+      )
+      return next
+    })
+  }
+
+  const setChairBlockColor = (key: string, color: string) => {
+    setOverrides((prev) => {
+      const next = new Map(prev)
+      next.set(key, { status: 'blocked', blockColor: color })
+      return next
+    })
   }
 
   const chairColor = (key: string) => {
     const s = getStatus(key)
-    return s === 'occupied' ? '#ef4444' : s === 'reserved' ? '#f4a52e' : '#22c55e'
+    if (s === 'reserved') return '#ef4444'
+    if (s === 'blocked')  return getBlockColor(key)
+    return '#22c55e'
   }
 
   const hasChanges = overrides.size > 0
 
   const handleSave = async () => {
-    // Группируем изменения по таблицам
     for (const table of TABLES) {
       const changed = table.chairs.filter((c) => overrides.has(c.key))
       if (!changed.length) continue
       const tableId = labelToTableId.get(table.label)
       if (!tableId) continue
       await api.patch(`/admin/tables/${tableId}/chairs`, {
-        chairs: changed.map((c) => ({ id: keyToId.get(c.key), status: overrides.get(c.key) })),
+        chairs: changed.map((c) => {
+          const ov = overrides.get(c.key)!
+          return {
+            id: keyToId.get(c.key),
+            status: ov.status,
+            ...(ov.status === 'blocked' ? { blockColor: ov.blockColor ?? DEFAULT_BLOCK_COLOR } : {}),
+          }
+        }),
       })
     }
     setOverrides(new Map())
@@ -190,7 +220,7 @@ export default function AdminMap() {
 
               return (
                 <g key={table.id}>
-                  {/* Стол (клик → открыть панель) */}
+                  {/* Стол */}
                   <g
                     style={{ cursor: 'pointer' }}
                     onClick={() => setActiveTable((prev) => prev?.id === table.id ? null : table)}
@@ -215,25 +245,37 @@ export default function AdminMap() {
                     </text>
                   </g>
 
-                  {/* Стулья (клик → переключить статус) */}
+                  {/* Стулья */}
                   {table.chairs.map((chair) => {
                     const status = getStatus(chair.key)
                     const color  = chairColor(chair.key)
-                    const isOcc  = status === 'occupied'
+                    const isRes  = status === 'reserved'
                     return (
                       <g
                         key={chair.key}
-                        style={{ cursor: isOcc ? 'default' : 'pointer' }}
+                        style={{ cursor: isRes ? 'default' : 'pointer' }}
                         onClick={(e) => { e.stopPropagation(); toggleChair(chair.key) }}
                       >
-                        {isOcc && <title>Занято до {timeEnd}</title>}
+                        {isRes && <title>Занято до {timeEnd}</title>}
+                        {isActive && (
+                          <circle
+                            cx={chair.x} cy={chair.y}
+                            r={CHAIR_R + 4}
+                            fill="none"
+                            stroke="#f4a52e"
+                            strokeWidth={1.5}
+                            strokeDasharray="3 2"
+                            opacity={0.7}
+                            pointerEvents="none"
+                          />
+                        )}
                         <circle
                           cx={chair.x} cy={chair.y}
                           r={CHAIR_R}
                           fill={color}
                           fillOpacity={0.25}
                           stroke={color}
-                          strokeWidth={1.5}
+                          strokeWidth={isActive ? 2.5 : 1.5}
                         />
                       </g>
                     )
@@ -246,8 +288,8 @@ export default function AdminMap() {
           {/* Легенда */}
           <div className="adm-legend">
             <span className="adm-leg adm-leg--free">Свободно</span>
-            <span className="adm-leg adm-leg--occ">Занято (бронь)</span>
-            <span className="adm-leg adm-leg--reserved">Заблокировано</span>
+            <span className="adm-leg adm-leg--reserved">Занято (бронь)</span>
+            <span className="adm-leg adm-leg--blocked">Заблокировано</span>
           </div>
         </div>
 
@@ -265,18 +307,29 @@ export default function AdminMap() {
 
             <div className="adm-panel__chairs">
               {activeTable.chairs.map((chair, idx) => {
-                const status = getStatus(chair.key)
+                const status     = getStatus(chair.key)
+                const blockColor = getBlockColor(chair.key)
                 return (
-                  <button
-                    key={chair.key}
-                    className={`adm-chair-btn adm-chair-btn--${status}`}
-                    onClick={() => toggleChair(chair.key)}
-                    disabled={status === 'occupied'}
-                  >
-                    {activeTable.label}-{idx + 1}
-                    {' · '}
-                    {status === 'free' ? 'Свободно' : status === 'occupied' ? 'Занято' : 'Заблок.'}
-                  </button>
+                  <div key={chair.key} className="adm-chair-row">
+                    <button
+                      className={`adm-chair-btn adm-chair-btn--${status}`}
+                      onClick={() => toggleChair(chair.key)}
+                      disabled={status === 'reserved'}
+                    >
+                      {activeTable.label}-{idx + 1}
+                      {' · '}
+                      {status === 'free' ? 'Свободно' : status === 'reserved' ? 'Занято' : 'Заблок.'}
+                    </button>
+                    {status === 'blocked' && (
+                      <input
+                        type="color"
+                        className="adm-color-pick"
+                        value={blockColor}
+                        title="Цвет блокировки"
+                        onChange={(e) => setChairBlockColor(chair.key, e.target.value)}
+                      />
+                    )}
+                  </div>
                 )
               })}
             </div>

@@ -355,9 +355,10 @@
   flex: none;
 }
 
-.bm-leg--free::before { background: #22c55e; }
-.bm-leg--occ::before  { background: #df3b2c; }
-.bm-leg--sel::before  { background: #f4a52e; }
+.bm-leg--free::before     { background: #22c55e; }
+.bm-leg--occ::before      { background: #df3b2c; }
+.bm-leg--blocked::before  { background: #facc15; }
+.bm-leg--sel::before      { background: #f4a52e; }
 
 /* ── Успех ── */
 .bm-success {

@@ -167,7 +167,8 @@ export default function BookingMap({ onClose }) {
   const [guestCount, setGuestCount] = useState(0);
   const [guestTooMany, setGuestTooMany] = useState(false);
 
-  const [occupied, setOccupied] = useState(new Set());
+  const [occupied,    setOccupied]    = useState(new Set());
+  const [blockedMeta, setBlockedMeta] = useState({});
   const [selected, setSelected] = useState(new Set());
   const [date, setDate] = useState(todayStr);
   const [timeStart, setTimeStart] = useState(() => getInitTimes()[0]);
@@ -201,6 +202,7 @@ export default function BookingMap({ onClose }) {
       if (!res.ok) return;
       const data = await res.json();
       const occ = new Set();
+      const blocked = {};
       const newMap = {};
       if (Array.isArray(data)) {
         data.forEach((backendTable) => {
@@ -210,14 +212,18 @@ export default function BookingMap({ onClose }) {
             const frontChair = frontTable.chairs[idx];
             if (!frontChair) return;
             newMap[frontChair.key] = backendChair.id;
-            if (backendChair.status !== "free") {
+            if (backendChair.status === "reserved") {
               occ.add(frontChair.key);
+            } else if (backendChair.status === "blocked") {
+              occ.add(frontChair.key);
+              blocked[frontChair.key] = backendChair.blockColor || "#facc15";
             }
           });
         });
       }
       keyToChairId.current = newMap;
       setOccupied(occ);
+      setBlockedMeta(blocked);
       setSelected((prev) => {
         const next = new Set([...prev].filter((k) => !occ.has(k)));
         return next.size !== prev.size ? next : prev;
@@ -706,14 +712,18 @@ export default function BookingMap({ onClose }) {
                       const occ = isOcc(chair.key);
                       const sel = isSel(chair.key);
                       const chairDim = !suitable;
+                      const isBlocked = !!blockedMeta[chair.key];
+                      const blockColor = blockedMeta[chair.key] || "#facc15";
 
                       const strokeColor = chairDim
                         ? "rgba(255,255,255,0.18)"
                         : sel
                           ? "#f4a52e"
-                          : occ
-                            ? "#df3b2c"
-                            : "#22c55e";
+                          : isBlocked
+                            ? blockColor
+                            : occ
+                              ? "#df3b2c"
+                              : "#22c55e";
                       const fillOpacity = chairDim ? 0.08 : occ ? 0.15 : 0.28;
                       const chairOpacity = chairDim ? 0.35 : 1;
 
@@ -743,7 +753,8 @@ export default function BookingMap({ onClose }) {
                             fill="rgba(0,0,0,0)"
                             style={{ pointerEvents: "all" }}
                           />
-                          {occ && <title>Занято до {timeEnd}</title>}
+                          {occ && !isBlocked && <title>Занято до {timeEnd}</title>}
+                          {isBlocked && <title>Место заблокировано</title>}
                           {sel && (
                             <circle
                               cx={chair.x}
@@ -775,6 +786,7 @@ export default function BookingMap({ onClose }) {
             <div className="bm-legend">
               <span className="bm-leg bm-leg--free">Свободно</span>
               <span className="bm-leg bm-leg--occ">Занято</span>
+              <span className="bm-leg bm-leg--blocked">Заблокировано</span>
               <span className="bm-leg bm-leg--sel">Выбрано</span>
               <span className="bm-leg bm-leg--partial">Частично занято</span>
               <span className="bm-leg bm-leg--dim">Не подходит</span>
