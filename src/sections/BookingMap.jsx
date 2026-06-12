@@ -417,9 +417,15 @@ export default function BookingMap({ onClose }) {
                 const tcx = table.x + table.width / 2;
                 const tcy = table.y + table.height / 2;
 
-                const occCount = table.chairs.filter((c) => isOcc(c.key)).length;
-                const tableOccStatus =
-                  occCount === 0 ? "free" : occCount === cap ? "full" : "partial";
+                const reservedCount     = table.chairs.filter((c) => isOcc(c.key) && !blockedMeta[c.key]).length;
+                const adminBlockedCount = table.chairs.filter((c) => !!blockedMeta[c.key]).length;
+                const occCount          = reservedCount + adminBlockedCount;
+                const tableOccStatus    = occCount === 0 ? "free" : occCount === cap ? "full" : "partial";
+
+                // Стол забронирован (есть реальные брони) → красный
+                const hasReserved = reservedCount > 0;
+                // Стол занят администратором, броней нет → показываем "ЗАНЯТ"
+                const isAdminBlocked = adminBlockedCount > 0 && reservedCount === 0;
 
                 const selectedFromTable = table.chairs.filter((c) => isSel(c.key)).length;
                 const canClick = suitable && free.length > 0;
@@ -427,33 +433,39 @@ export default function BookingMap({ onClose }) {
 
                 const rectFill = hasSelected
                   ? "rgba(244,165,46,0.18)"
-                  : !suitable
-                    ? "rgba(255,255,255,0.02)"
-                    : tableOccStatus === "full"
-                      ? "rgba(223,59,44,0.08)"
-                      : tableOccStatus === "partial"
-                        ? "rgba(244,165,46,0.08)"
-                        : "rgba(255,255,255,0.08)";
+                  : hasReserved
+                    ? "rgba(239,68,68,0.14)"
+                    : isAdminBlocked
+                      ? "rgba(255,255,255,0.04)"
+                      : !suitable
+                        ? "rgba(255,255,255,0.02)"
+                        : tableOccStatus === "partial"
+                          ? "rgba(244,165,46,0.06)"
+                          : "rgba(255,255,255,0.08)";
 
                 const rectStroke = hasSelected
                   ? "#f4a52e"
-                  : !suitable
-                    ? "rgba(255,255,255,0.1)"
-                    : tableOccStatus === "full"
-                      ? "rgba(223,59,44,0.7)"
-                      : tableOccStatus === "partial"
-                        ? "rgba(244,165,46,0.6)"
-                        : "rgba(255,255,255,0.28)";
+                  : hasReserved
+                    ? "#ef4444"
+                    : isAdminBlocked
+                      ? "rgba(255,255,255,0.25)"
+                      : !suitable
+                        ? "rgba(255,255,255,0.1)"
+                        : tableOccStatus === "partial"
+                          ? "rgba(244,165,46,0.5)"
+                          : "rgba(255,255,255,0.28)";
 
                 const labelFill = hasSelected
                   ? "#f4a52e"
-                  : !suitable
-                    ? "rgba(255,255,255,0.2)"
-                    : tableOccStatus === "full"
-                      ? "rgba(223,59,44,0.7)"
-                      : tableOccStatus === "partial"
-                        ? "rgba(244,165,46,0.85)"
-                        : "rgba(255,255,255,0.6)";
+                  : hasReserved
+                    ? "#ef4444"
+                    : isAdminBlocked
+                      ? "rgba(255,255,255,0.35)"
+                      : !suitable
+                        ? "rgba(255,255,255,0.2)"
+                        : tableOccStatus === "partial"
+                          ? "rgba(244,165,46,0.85)"
+                          : "rgba(255,255,255,0.6)";
 
                 const tableOpacity = !suitable ? 0.4 : 1;
                 const cursor = canClick
@@ -461,7 +473,10 @@ export default function BookingMap({ onClose }) {
                   : tableOccStatus === "full"
                     ? "not-allowed"
                     : "default";
-                const showUntil = tableOccStatus === "full" && !isBar;
+                // "до ЧЧ:ММ" только для полностью забронированных (реальные брони)
+                const showUntil  = reservedCount === cap && !isBar;
+                // "ЗАНЯТ" для полностью заблокированных администратором
+                const showZanyat = isAdminBlocked && adminBlockedCount === cap && !isBar;
 
                 return (
                   <g key={table.id}>
@@ -473,19 +488,20 @@ export default function BookingMap({ onClose }) {
                       aria-label={`${isBar ? "Бар" : `Стол ${table.label}`} — ${canClick ? "выбрать места" : "недоступен"}`}
                       aria-disabled={!canClick}
                     >
-                      {tableOccStatus === "full" && <title>Стол занят до {timeEnd}</title>}
+                      {hasReserved    && <title>Забронировано до {timeEnd}</title>}
+                      {isAdminBlocked && <title>Занято</title>}
                       <rect
                         x={table.x} y={table.y}
                         width={table.width} height={table.height}
                         rx={4}
                         fill={rectFill}
                         stroke={rectStroke}
-                        strokeWidth={hasSelected ? 2 : 1.5}
+                        strokeWidth={hasReserved ? 2 : hasSelected ? 2 : 1.5}
                         opacity={tableOpacity}
                       />
                       <text
                         x={tcx}
-                        y={tcy + (showUntil ? -4 : 6)}
+                        y={tcy + (showUntil || showZanyat ? -4 : 6)}
                         textAnchor="middle"
                         className="bm-tbl-name"
                         fill={labelFill}
@@ -499,13 +515,26 @@ export default function BookingMap({ onClose }) {
                         <text
                           x={tcx} y={tcy + 10}
                           textAnchor="middle"
-                          fill="rgba(223,59,44,0.7)"
+                          fill="#ef4444"
                           pointerEvents="none"
                           fontSize="9"
                           fontFamily="var(--font-display)"
                           opacity={tableOpacity}
                         >
                           до {timeEnd}
+                        </text>
+                      )}
+                      {showZanyat && (
+                        <text
+                          x={tcx} y={tcy + 10}
+                          textAnchor="middle"
+                          fill="rgba(255,255,255,0.5)"
+                          pointerEvents="none"
+                          fontSize="9"
+                          fontFamily="var(--font-display)"
+                          opacity={tableOpacity}
+                        >
+                          ЗАНЯТ
                         </text>
                       )}
                     </g>
@@ -516,17 +545,17 @@ export default function BookingMap({ onClose }) {
                       const chairDim = !suitable;
                       const isBlocked = !!blockedMeta[chair.key];
 
-                      // free=зелёный, reserved=красный, blocked=светло-жёлтый, selected=янтарный
+                      // free=зелёный, reserved=красный, blocked=серый(занят), selected=янтарный
                       const strokeColor = chairDim
                         ? "rgba(255,255,255,0.18)"
                         : sel
                           ? "#f4a52e"
                           : isBlocked
-                            ? "#facc15"
+                            ? "rgba(160,160,175,0.7)"
                             : occ
                               ? "#ef4444"
                               : "#22c55e";
-                      const fillOpacity = chairDim ? 0.08 : occ ? 0.15 : 0.28;
+                      const fillOpacity = chairDim ? 0.08 : isBlocked ? 0.12 : occ ? 0.2 : 0.28;
                       const chairOpacity = chairDim ? 0.35 : 1;
 
                       return (
@@ -542,8 +571,8 @@ export default function BookingMap({ onClose }) {
                         >
                           {/* увеличенная область клика */}
                           <circle cx={chair.x} cy={chair.y} r={CHAIR_R + 20} fill="rgba(0,0,0,0)" style={{ pointerEvents: "all" }} />
-                          {occ && !isBlocked && <title>Занято до {timeEnd}</title>}
-                          {isBlocked && <title>Недоступно</title>}
+                          {occ && !isBlocked && <title>Забронировано до {timeEnd}</title>}
+                          {isBlocked && <title>Занято</title>}
                           {sel && (
                             <circle cx={chair.x} cy={chair.y} r={CHAIR_R + 5} fill="none" stroke="#f4a52e" strokeWidth="1" opacity="0.35" />
                           )}
@@ -565,8 +594,8 @@ export default function BookingMap({ onClose }) {
 
             <div className="bm-legend">
               <span className="bm-leg bm-leg--free">Свободно</span>
-              <span className="bm-leg bm-leg--occ">Занято</span>
-              <span className="bm-leg bm-leg--blocked">Недоступно</span>
+              <span className="bm-leg bm-leg--occ">Забронировано</span>
+              <span className="bm-leg bm-leg--blocked">Занято</span>
               <span className="bm-leg bm-leg--sel">Выбрано</span>
               <span className="bm-leg bm-leg--partial">Частично занято</span>
               <span className="bm-leg bm-leg--dim">Не подходит</span>
