@@ -14,7 +14,17 @@ export default defineConfig({
       '/tables':       { target: BACKEND_URL, changeOrigin: true, secure: false },
       '/reservations': { target: BACKEND_URL, changeOrigin: true, secure: false },
       '/auth':         { target: BACKEND_URL, changeOrigin: true, secure: false },
-      '/admin':        { target: BACKEND_URL, changeOrigin: true, secure: false },
+      // /admin совпадает и с API-путями (/admin/reservations) и со страницами (/admin/login).
+      // bypass: если браузер запрашивает HTML (навигация) — отдаём SPA, иначе — проксируем на бэк.
+      '/admin': {
+        target: BACKEND_URL,
+        changeOrigin: true,
+        secure: false,
+        bypass(req) {
+          if (req.headers.accept?.includes('text/html')) return '/index.html'
+          return null
+        },
+      },
     },
   },
   resolve: {
