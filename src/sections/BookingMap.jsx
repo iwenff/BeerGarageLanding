@@ -147,10 +147,17 @@ export default function BookingMap({ onClose }) {
     if (!guestCount) return [];
     const nonBar = TABLES.filter((t) => t.label !== "BAR");
 
+    // Для 5 человек предлагаем и главный зал (5 мест), и VIP (6 мест) одновременно
+    if (guestCount === 5) {
+      return nonBar.filter(
+        (t) => (is4or5(t) || is6seat(t)) && freeChairsOf(t).length >= guestCount,
+      );
+    }
+
     let tiers;
     if (guestCount === 1)      tiers = [is2seat];
     else if (guestCount === 2) tiers = [is2seat, is4or5];
-    else if (guestCount <= 5)  tiers = [is4or5, is6seat];
+    else if (guestCount <= 4)  tiers = [is4or5, is6seat];
     else if (guestCount <= 6)  tiers = [is6seat, is8plus];
     else                       tiers = [is8plus];
 
