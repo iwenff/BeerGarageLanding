@@ -167,7 +167,12 @@ export default function AdminMap() {
           return {
             id: keyToId.get(c.key),
             status: ov.status,
-            ...(ov.status === 'blocked' ? { blockColor: ov.blockColor ?? DEFAULT_BLOCK_COLOR } : {}),
+            ...(ov.status === 'blocked' ? {
+              blockColor:     ov.blockColor ?? DEFAULT_BLOCK_COLOR,
+              blockDate:      date,
+              blockTimeStart: timeStart,
+              blockTimeEnd:   timeEnd,
+            } : {}),
           }
         }),
       })

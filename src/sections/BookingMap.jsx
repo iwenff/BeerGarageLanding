@@ -6,6 +6,20 @@ const API_URL = import.meta.env.VITE_API_URL;
 const CHAIR_R = 10;
 const BAR_PHONE = "+7 (999) 631-69-99";
 
+function formatPhone(val) {
+  const digits = val.replace(/\D/g, "").slice(0, 11);
+  let out = "";
+  for (let i = 0; i < digits.length; i++) {
+    if (i === 0) out += "+" + digits[i];
+    else if (i === 1) out += "(" + digits[i];
+    else if (i === 4) out += ")-" + digits[i];
+    else if (i === 7) out += "-" + digits[i];
+    else if (i === 9) out += "-" + digits[i];
+    else out += digits[i];
+  }
+  return out;
+}
+
 const todayStr = () => new Date().toISOString().slice(0, 10);
 
 function getInitTimes() {
@@ -136,7 +150,7 @@ export default function BookingMap({ onClose }) {
     let tiers;
     if (guestCount === 1)      tiers = [is2seat];
     else if (guestCount === 2) tiers = [is2seat, is4or5];
-    else if (guestCount <= 4)  tiers = [is4or5, is6seat];
+    else if (guestCount <= 5)  tiers = [is4or5, is6seat];
     else if (guestCount <= 6)  tiers = [is6seat, is8plus];
     else                       tiers = [is8plus];
 
@@ -174,6 +188,7 @@ export default function BookingMap({ onClose }) {
 
   // ── Table click ───────────────────────────────────────────────────────────
   const toggleTable = (table) => {
+    if (success) return;
     const suitable = isTableSuitable(table);
     if (!suitable) {
       const occCount = table.chairs.filter((c) => isOcc(c.key)).length;
@@ -201,6 +216,7 @@ export default function BookingMap({ onClose }) {
   // ── Chair click ───────────────────────────────────────────────────────────
   const toggleChair = (chair, table, tableSuitable, e) => {
     e.stopPropagation();
+    if (success) return;
     if (isOcc(chair.key) || !tableSuitable) return;
 
     if (!selected.has(chair.key) && selected.size >= guestCount) {
@@ -248,7 +264,7 @@ export default function BookingMap({ onClose }) {
       const res = await fetch(`${API_URL}/reservations`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ chairIds, date, timeStart, timeEnd, guestName: form.name, guestPhone: form.phone }),
+        body: JSON.stringify({ chairIds, date, timeStart, timeEnd, guestName: form.name, guestPhone: "+" + form.phone.replace(/\D/g, "") }),
       });
       if (!res.ok) {
         const b = await res.json().catch(() => ({}));
@@ -362,7 +378,7 @@ export default function BookingMap({ onClose }) {
               className="bm-svg"
               viewBox="0 0 990 905"
               xmlns="http://www.w3.org/2000/svg"
-              style={{ opacity: fetchLoading ? 0.5 : 1, transition: 'opacity 0.2s' }}
+              style={{ opacity: fetchLoading ? 0.5 : success ? 0.45 : 1, transition: "opacity 0.2s", pointerEvents: success ? "none" : undefined }}
             >
               {/* VIP room */}
               <rect className="bm-room bm-room--vip" x="520" y="28" width="300" height="272" rx="6" />
@@ -569,7 +585,10 @@ export default function BookingMap({ onClose }) {
           </div>
 
           {success && (
-            <div className="bm-success">Бронь принята! Мы свяжемся с вами для подтверждения.</div>
+            <div className="bm-success">
+              Бронь принята! Мы свяжемся с вами для подтверждения.
+              <span className="bm-success__hint">Чтобы забронировать снова — закройте и откройте раздел бронирования.</span>
+            </div>
           )}
 
           {count > 0 && (
@@ -586,11 +605,31 @@ export default function BookingMap({ onClose }) {
                 <div className="bm-form-grid">
                   <label className="bm-field">
                     <span>Имя</span>
-                    <input type="text" required placeholder="Ваше имя" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} />
+                    <input
+                      type="text"
+                      required
+                      placeholder="Ваше имя"
+                      value={form.name}
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/[0-9]/g, "");
+                        setForm((f) => ({ ...f, name: val }));
+                      }}
+                    />
                   </label>
                   <label className="bm-field">
                     <span>Телефон</span>
-                    <input type="tel" required placeholder="+7 900 000-00-00" value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} />
+                    <input
+                      type="tel"
+                      inputMode="numeric"
+                      required
+                      placeholder="+7(900)-000-00-00"
+                      value={form.phone}
+                      maxLength={18}
+                      onChange={(e) => {
+                        const formatted = formatPhone(e.target.value);
+                        setForm((f) => ({ ...f, phone: formatted }));
+                      }}
+                    />
                   </label>
                   <label className="bm-field">
                     <span>Дата</span>
