@@ -341,6 +341,31 @@ export default function BookingMap({ onClose }) {
     );
   }
 
+  // ── Success: centered confirmation, map window closed ─────────────────────
+  if (success) {
+    return (
+      <div className="bm-overlay bm-overlay--center" onClick={onClose} role="dialog" aria-modal="true">
+        <div className="bm-modal bm-modal--confirm" onClick={(e) => e.stopPropagation()}>
+          <button className="bm-modal__close" onClick={onClose} type="button" aria-label="Закрыть">✕</button>
+          <div className="bm-confirm">
+            <div className="bm-confirm__check" aria-hidden>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <path d="M20 6 9 17l-5-5" />
+              </svg>
+            </div>
+            <h2 className="bm-confirm__title">Бронь принята!</h2>
+            <p className="bm-confirm__text">
+              Всё успешно — в скором времени свяжемся с вами для уточнения брони.
+            </p>
+            <button className="btn btn--primary btn--block bm-confirm__btn" onClick={onClose} type="button">
+              Готово
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // ── Step 2: map ───────────────────────────────────────────────────────────
   return (
     <div className="bm-overlay" onClick={onClose} role="dialog" aria-modal="true">
@@ -619,13 +644,6 @@ export default function BookingMap({ onClose }) {
               </div>
             )}
           </div>
-
-          {success && (
-            <div className="bm-success">
-              Бронь принята! Мы свяжемся с вами для подтверждения.
-              <span className="bm-success__hint">Чтобы забронировать снова — закройте и откройте раздел бронирования.</span>
-            </div>
-          )}
 
           {count > 0 && (
             <div className="bm-form-wrap" ref={formRef}>

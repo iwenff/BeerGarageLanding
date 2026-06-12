@@ -360,28 +360,62 @@
 .bm-leg--blocked::before  { background: #facc15; }
 .bm-leg--sel::before      { background: #f4a52e; }
 
-/* ── Успех ── */
-.bm-success {
-  background: rgba(34, 197, 94, 0.1);
-  border: 1px solid rgba(34, 197, 94, 0.32);
-  border-radius: var(--radius-sm);
-  padding: 16px 20px;
-  color: #4ade80;
-  font-family: var(--font-display);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  font-size: 14px;
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+/* ── Успех: центрированная модалка подтверждения ── */
+.bm-overlay--center { align-items: center; }
+
+.bm-modal--confirm {
+  max-width: 420px;
+  margin: auto;
 }
 
-.bm-success__hint {
-  font-size: 11px;
-  letter-spacing: 0.04em;
-  color: rgba(74, 222, 128, 0.65);
-  text-transform: none;
+.bm-confirm {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 14px;
+  padding: 40px 32px 36px;
+}
+
+.bm-confirm__check {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: #22c55e;
+  background: rgba(34, 197, 94, 0.12);
+  border: 1px solid rgba(34, 197, 94, 0.4);
+  margin-bottom: 4px;
+  animation: bm-confirm-pop 0.4s cubic-bezier(.2,.9,.3,1.4) both;
+}
+.bm-confirm__check svg { width: 36px; height: 36px; }
+
+@keyframes bm-confirm-pop {
+  from { opacity: 0; transform: scale(0.5); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+.bm-confirm__title {
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  font-size: clamp(1.6rem, 5vw, 2.1rem);
+  font-weight: 700;
+  line-height: 1;
+  color: var(--cream);
+}
+
+.bm-confirm__text {
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.6;
+  max-width: 320px;
+}
+
+.bm-confirm__btn {
+  margin-top: 10px;
+  font-size: 16px;
+  padding: 16px;
 }
 
 /* ── Форма ── */
@@ -656,21 +690,31 @@
 
 /* ── Адаптив ── */
 @media (max-width: 600px) {
-  .bm-overlay { padding: 0; align-items: flex-end; }
+  /* центрируем модалку, а не приклеиваем к низу — иначе на телефоне она
+     уезжает под клавиатуру (ввод гостей) */
+  .bm-overlay { padding: 12px; align-items: center; justify-content: center; }
 
   .bm-modal {
-    border-bottom-left-radius: 0;
-    border-bottom-right-radius: 0;
-    max-height: 95dvh;
+    border-radius: var(--radius);
+    max-height: 92dvh;
     overflow-y: auto;
+    margin: auto;
   }
 
   .bm-modal__head { padding: 20px 18px 16px; }
   .bm-modal__body { padding: 16px 18px 28px; gap: 16px; }
   .bm-form-wrap   { padding: 18px 16px 20px; }
   .bm-form-grid   { grid-template-columns: 1fr; gap: 10px; }
-  .bm-filters     { gap: 10px; }
-  .bm-filter-field{ min-width: 110px; }
+
+  /* дата на всю ширину, под ней «с» и «по» в два столбца — без наложений */
+  .bm-filters {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .bm-filter-field { min-width: 0; }
+  .bm-filter-field:first-child { grid-column: 1 / -1; }
+  .bm-filter-field input { width: 100%; box-sizing: border-box; min-width: 0; }
 
   .bm-map-wrap {
     padding: 10px 8px 8px;
@@ -700,7 +744,7 @@
   .bm-modal__body { padding: 12px 14px 24px; gap: 14px; }
   .bm-form-wrap   { padding: 14px 12px 16px; }
   .bm-filters     { gap: 8px; }
-  .bm-filter-field{ min-width: 96px; font-size: 13px; }
+  .bm-filter-field{ min-width: 0; font-size: 13px; }
   .bm-svg         { min-width: 540px; width: 540px; }
   .bm-guests-title { font-size: 1.1rem; }
   .bm-map-notice  { font-size: 12px; padding: 8px 12px; }

@@ -23,6 +23,7 @@ export default function Hero({ onMaxClick, onMenuClick }) {
           0.35,
         )
         .from(".hero__lead", { y: 24, opacity: 0, duration: 0.7 }, 0.9)
+        .from(".hero__address", { y: 20, opacity: 0, duration: 0.6 }, 1.0)
         .from(
           ".hero__cta > *",
           { y: 26, opacity: 0, duration: 0.6, stagger: 0.12 },
@@ -102,9 +103,22 @@ export default function Hero({ onMaxClick, onMenuClick }) {
         </h1>
 
         <p className="hero__lead">
-          Живой крафт на кранах, нормальные бургеры и хорошая компания. Бетон,
+          Живой крафт на кранах, авторские бургеры и хорошая компания. Бетон,
           тёплый свет и янтарь в бокале — всё остальное само складывается.
         </p>
+
+        <a
+          className="hero__address"
+          href="https://yandex.ru/maps/?text=Новороссийск, Южная улица, 27"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M21 10c0 6-9 12-9 12s-9-6-9-12a9 9 0 0 1 18 0Z" />
+            <circle cx="12" cy="10" r="3" />
+          </svg>
+          Южная ул., 27, Новороссийск
+        </a>
 
         <div className="hero__cta">
           <a

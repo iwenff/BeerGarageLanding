@@ -3,11 +3,10 @@ import { PersonIcon } from "./icons";
 import "./Navbar.css";
 
 const NAV = [
-  { label: "Меню",        href: "#menu" },
-  { label: "Уже улетели", href: "#beers" },
-  { label: "Ивенты",      href: "#events" },
-  { label: "Атмосфера",   href: "#interior" },
-  { label: "Контакты",    href: "#connect" },
+  { label: "Архив вкусов", href: "#beers" },
+  { label: "Ивенты",       href: "#events" },
+  { label: "Атмосфера",    href: "#interior" },
+  { label: "Контакты",     href: "#connect" },
 ];
 
 function ProfilePopup({ onClose }) {

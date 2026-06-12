@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import {
   BURGERS,
-  MENU_DRAFT,
   MENU_SPIRITS,
   MENU_COCKTAILS,
   MENU_SHOTS,
@@ -13,14 +12,6 @@ import {
 import "./MenuPage.css";
 
 /* ── icons ─────────────────────────────────────────── */
-const IconTap = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-    <path d="M8 3h8l1 6H7L8 3Z" />
-    <rect x="9" y="9" width="6" height="12" rx="1" />
-    <line x1="12" y1="21" x2="12" y2="23" />
-    <line x1="8" y1="23" x2="16" y2="23" />
-  </svg>
-);
 const IconCocktail = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
     <path d="M6 3h12l-6 8v8" />
@@ -79,7 +70,6 @@ const IconGroup = () => (
 );
 
 const BAR_TABS = [
-  { id: "draft",     label: "На кранах",  icon: <IconTap /> },
   { id: "cocktails", label: "Коктейли",   icon: <IconCocktail /> },
   { id: "shots",     label: "Шоты",       icon: <IconShot /> },
   { id: "setshots",  label: "Сет-шоты",   icon: <IconSet /> },
@@ -93,49 +83,7 @@ const FOOD_TABS = [
   { id: "group",     label: "Для компании", icon: <IconGroup /> },
 ];
 
-/* ── Draft beer card ─────────────────────────────────── */
-function DraftCard({ beer }) {
-  return (
-    <div className="mcard mcard--draft">
-      <div className="mcard__accent" style={{ background: beer.accent }} />
-      <div className="mcard__body">
-        <div className="mcard__meta">
-          <span className="mcard__brewery">{beer.brewery}</span>
-          <span className="mcard__style">{beer.style}</span>
-        </div>
-        <h3 className="mcard__name">{beer.name}</h3>
-        <p className="mcard__desc">{beer.desc}</p>
-        <div className="mcard__footer">
-          <span className="mcard__spec">{beer.abv} ABV</span>
-          <span className="mcard__spec">{beer.vol}</span>
-          <span className="mcard__price">{beer.price} ₽</span>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ── Cocktail card ───────────────────────────────────── */
-function CocktailCard({ item }) {
-  return (
-    <div className="mcard mcard--cocktail">
-      <div className="mcard__body">
-        <h3 className="mcard__name">{item.name}</h3>
-        <p className="mcard__desc">{item.desc}</p>
-        <div className="mcard__footer">
-          <span className="mcard__spec">{item.vol}</span>
-          {item.price != null ? (
-            <span className="mcard__price">{item.price} ₽</span>
-          ) : (
-            <span className="mcard__price-ask">спросите бармена</span>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ── Unified list row (shots, shot sets, starters, salads, seafood) ── */
+/* ── Unified list row (cocktails, shots, shot sets, starters, salads, seafood) ── */
 function ListRow({ item }) {
   return (
     <div className="mrow">
@@ -203,25 +151,10 @@ function BurgerCard({ burger }) {
   );
 }
 
-/* ── Group set card ──────────────────────────────────── */
-function GroupCard({ item }) {
-  return (
-    <div className="mcard mcard--group">
-      <div className="mcard__body">
-        <h3 className="mcard__name">{item.name}</h3>
-        <p className="mcard__desc">{item.desc}</p>
-        <div className="mcard__footer">
-          <span className="mcard__price">{item.price} ₽</span>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 /* ── Main MenuPage ───────────────────────────────────── */
 export default function MenuPage({ onClose }) {
   const [mainTab, setMainTab] = useState("bar");
-  const [barSub, setBarSub] = useState("draft");
+  const [barSub, setBarSub] = useState("cocktails");
   const [foodSub, setFoodSub] = useState("starters");
 
   useEffect(() => {
@@ -262,7 +195,7 @@ export default function MenuPage({ onClose }) {
         <div className="menupage__maintabs">
           <button
             className={mainTab === "bar" ? "active" : ""}
-            onClick={() => { setMainTab("bar"); setBarSub("draft"); }}
+            onClick={() => { setMainTab("bar"); setBarSub("cocktails"); }}
             type="button"
           >
             🍺 Барная карта
@@ -316,34 +249,15 @@ export default function MenuPage({ onClose }) {
       <div className="menupage__content">
         <div className="container">
 
-          {/* BAR: draft */}
-          {mainTab === "bar" && barSub === "draft" && (
-            <>
-              <div className="menupage__section-head">
-                <h2 className="menupage__section-title">
-                  На кранах <span className="accent">18</span>
-                </h2>
-                <p className="menupage__section-note">
-                  Ротация каждую неделю — актуальный список у бармена
-                </p>
-              </div>
-              <div className="mcard-grid mcard-grid--draft">
-                {MENU_DRAFT.map((b) => (
-                  <DraftCard key={b.id} beer={b} />
-                ))}
-              </div>
-            </>
-          )}
-
           {/* BAR: cocktails */}
           {mainTab === "bar" && barSub === "cocktails" && (
             <>
               <div className="menupage__section-head">
                 <h2 className="menupage__section-title">Коктейли</h2>
               </div>
-              <div className="mcard-grid mcard-grid--cocktails">
+              <div className="mrow-list">
                 {MENU_COCKTAILS.map((c) => (
-                  <CocktailCard key={c.id} item={c} />
+                  <ListRow key={c.id} item={c} />
                 ))}
               </div>
             </>
@@ -467,9 +381,9 @@ export default function MenuPage({ onClose }) {
                   Большие наборы — берёте всего и сразу
                 </p>
               </div>
-              <div className="mcard-grid mcard-grid--group">
+              <div className="mrow-list">
                 {groupItems.map((i) => (
-                  <GroupCard key={i.id} item={i} />
+                  <ListRow key={i.id} item={i} />
                 ))}
               </div>
             </>

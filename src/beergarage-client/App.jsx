@@ -67,7 +67,7 @@ export default function ClientApp() {
         <Connect  onMaxClick={() => setMaxModalOpen(true)} />
       </main>
       <Footer   onMaxClick={() => setMaxModalOpen(true)} />
-      <MobileBar onMenuClick={() => setMenuPageOpen(true)} />
+      <MobileBar onMenuClick={() => setMenuPageOpen(true)} onBookClick={() => setBookingOpen(true)} />
       {maxModalOpen && <MaxModal   onClose={() => setMaxModalOpen(false)} />}
       {menuPageOpen && <MenuPage   onClose={() => setMenuPageOpen(false)} />}
       {bookingOpen  && <BookingMap onClose={() => setBookingOpen(false)}  />}

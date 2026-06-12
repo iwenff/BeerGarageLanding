@@ -4,17 +4,27 @@
 
 .menupage {
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  /* height (not inset:0) so the overlay tracks the mobile dynamic viewport and
+     fully covers the bottom — incl. where the mobile bar floats. dvh + svh
+     fallback keeps it gap-free under iOS Safari's collapsing toolbar. */
+  height: 100vh;
+  height: 100svh;
+  height: 100dvh;
   z-index: 3000;
   background: var(--bg);
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  animation: mp-in 0.38s cubic-bezier(.2,.8,.2,1) forwards;
+  /* fade only — transforming a fixed full-screen box leaves a crooked bottom
+     gap on mobile Safari, so the entrance never translates the root */
+  animation: mp-in 0.32s ease-out forwards;
 }
 @keyframes mp-in {
-  from { opacity: 0; transform: translateY(32px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
 /* ── HEADER ─────────────────────────────────────────────────── */
@@ -195,10 +205,9 @@
 }
 
 /* ============================================================
-   DRAFT BEER CARDS — horizontal, accentBorder on left
+   CARD BASE — used by burger cards
    ============================================================ */
 .mcard-grid { display: grid; gap: 16px; }
-.mcard-grid--draft { grid-template-columns: repeat(2, 1fr); }
 
 .mcard {
   display: flex;
@@ -214,37 +223,6 @@
   transform: translateY(-3px);
 }
 
-/* left accent stripe */
-.mcard__accent {
-  width: 4px;
-  flex: none;
-}
-
-.mcard--draft .mcard__body { padding: 18px 20px; }
-.mcard__meta {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 6px;
-}
-.mcard__brewery {
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: var(--amber);
-}
-.mcard__style {
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--muted-2);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  border: 1px solid var(--line-2);
-  padding: 3px 8px;
-  border-radius: 100px;
-}
 .mcard__name {
   font-family: var(--font-display);
   text-transform: uppercase;
@@ -265,15 +243,6 @@
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
-}
-.mcard__spec {
-  font-size: 11.5px;
-  font-weight: 600;
-  color: var(--muted-2);
-  background: rgba(255,255,255,0.04);
-  border: 1px solid var(--line);
-  padding: 4px 10px;
-  border-radius: 100px;
 }
 .mcard__price {
   margin-left: auto;
@@ -396,66 +365,6 @@
   border-radius: 100px;
 }
 
-/* ============================================================
-   COCKTAIL CARDS — 3-column grid
-   ============================================================ */
-.mcard-grid--cocktails {
-  grid-template-columns: repeat(3, 1fr);
-}
-.mcard--cocktail {
-  flex-direction: column;
-}
-.mcard--cocktail .mcard__body {
-  padding: 20px 22px;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.mcard--cocktail .mcard__name {
-  color: var(--cream);
-  font-size: clamp(1rem, 2vw, 1.3rem);
-}
-.mcard--cocktail .mcard__desc {
-  flex: 1;
-  font-size: 13px;
-}
-.mcard--cocktail .mcard__footer {
-  margin-top: auto;
-  padding-top: 10px;
-  border-top: 1px solid var(--line);
-}
-.mcard__price-ask {
-  margin-left: auto;
-  font-size: 13px;
-  font-style: italic;
-  color: var(--muted);
-}
-
-/* ============================================================
-   GROUP (for-company) card
-   ============================================================ */
-.mcard-grid--group {
-  grid-template-columns: 1fr;
-  max-width: 560px;
-}
-.mcard--group .mcard__body {
-  padding: 28px 32px;
-}
-.mcard--group .mcard__name {
-  font-size: clamp(1.4rem, 3vw, 2rem);
-  margin-bottom: 10px;
-}
-.mcard--group .mcard__desc {
-  font-size: 15px;
-  line-height: 1.65;
-  margin-bottom: 18px;
-}
-.mcard--group .mcard__price {
-  font-size: 1.8rem;
-  margin-left: 0;
-}
-
 /* ── extended row styles ─────────────────────────────── */
 .mrow__desc {
   font-size: 13px;
@@ -482,12 +391,9 @@
    ============================================================ */
 @media (max-width: 1100px) {
   .mcard-grid--burgers { grid-template-columns: repeat(2, 1fr); }
-  .mcard-grid--cocktails { grid-template-columns: repeat(2, 1fr); }
 }
 
 @media (max-width: 820px) {
-  .mcard-grid--draft { grid-template-columns: 1fr; }
-
   .menupage__header {
     grid-template-columns: 1fr auto;
     grid-template-rows: auto auto;
@@ -503,7 +409,6 @@
 
 @media (max-width: 640px) {
   .mcard-grid--burgers { grid-template-columns: 1fr 1fr; }
-  .mcard-grid--cocktails { grid-template-columns: 1fr; }
 
   .menupage__maintabs button { padding: 10px 14px; font-size: 12px; }
   .menupage__close span { display: none; }
@@ -516,6 +421,5 @@
 
 @media (max-width: 420px) {
   .mcard-grid--burgers { grid-template-columns: 1fr; }
-  .mcard--draft .mcard__body { padding: 14px 16px; }
   .menupage__subtabs-inner { padding: 8px 16px; }
 }
