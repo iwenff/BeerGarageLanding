@@ -51,7 +51,8 @@ export default function BookingMap({ onClose }) {
   const [success,   setSuccess]   = useState(false);
   const [apiError,  setError]     = useState(null);
   const [noSeatsDismissed, setNoSeatsDismissed] = useState(false);
-  const [mapNotice, setMapNotice] = useState(null);
+  const [mapNotice,    setMapNotice]    = useState(null);
+  const [fetchLoading, setFetchLoading] = useState(false);
 
   const formRef = useRef(null);
   const keyToChairId = useRef({});
@@ -69,6 +70,7 @@ export default function BookingMap({ onClose }) {
   const fetchStatuses = useCallback(async () => {
     if (!date || !timeStart || !timeEnd) return;
     setNoSeatsDismissed(false);
+    setFetchLoading(true);
     try {
       const qs = new URLSearchParams({ date, timeStart, timeEnd });
       const res = await fetch(`${API_URL}/tables?${qs}`);
@@ -104,6 +106,8 @@ export default function BookingMap({ onClose }) {
       });
     } catch {
       /* keep current */
+    } finally {
+      setFetchLoading(false);
     }
   }, [date, timeStart, timeEnd]);
 
@@ -351,7 +355,15 @@ export default function BookingMap({ onClose }) {
 
           {/* Карта */}
           <div className="bm-map-wrap" style={{ position: "relative" }}>
-            <svg className="bm-svg" viewBox="0 0 990 905" xmlns="http://www.w3.org/2000/svg">
+            {fetchLoading && (
+              <div className="bm-map-loading">Обновление…</div>
+            )}
+            <svg
+              className="bm-svg"
+              viewBox="0 0 990 905"
+              xmlns="http://www.w3.org/2000/svg"
+              style={{ opacity: fetchLoading ? 0.5 : 1, transition: 'opacity 0.2s' }}
+            >
               {/* VIP room */}
               <rect className="bm-room bm-room--vip" x="520" y="28" width="300" height="272" rx="6" />
               <text className="bm-vip-badge" x="592" y="68">VIP</text>
@@ -480,17 +492,16 @@ export default function BookingMap({ onClose }) {
                       const sel = isSel(chair.key);
                       const chairDim = !suitable;
                       const isBlocked = !!blockedMeta[chair.key];
-                      const blockColor = blockedMeta[chair.key] || "#facc15";
 
-                      // free=зелёный, reserved=красный, blocked=blockColor, selected=янтарный
+                      // free=зелёный, reserved=красный, blocked=светло-жёлтый, selected=янтарный
                       const strokeColor = chairDim
                         ? "rgba(255,255,255,0.18)"
                         : sel
                           ? "#f4a52e"
                           : isBlocked
-                            ? blockColor
+                            ? "#facc15"
                             : occ
-                              ? "#df3b2c"
+                              ? "#ef4444"
                               : "#22c55e";
                       const fillOpacity = chairDim ? 0.08 : occ ? 0.15 : 0.28;
                       const chairOpacity = chairDim ? 0.35 : 1;

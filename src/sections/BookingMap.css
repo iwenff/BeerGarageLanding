@@ -611,6 +611,24 @@
 .bm-guests-overflow a:hover { opacity: 0.8; }
 
 /* ── Уведомление на карте ── */
+.bm-map-loading {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 2;
+  font-size: 12px;
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--amber, #f4a52e);
+  animation: bm-pulse 1s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes bm-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.35; }
+}
+
 .bm-map-notice {
   margin-top: 10px;
   padding: 10px 16px;

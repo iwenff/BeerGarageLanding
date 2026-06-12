@@ -35,10 +35,12 @@ export default function AdminMap() {
   const [keyToId,        setKeyToId]        = useState<Map<string, number>>(new Map())
   const [labelToTableId, setLabelToTableId] = useState<Map<string, number>>(new Map())
 
-  const [activeTable, setActiveTable] = useState<(typeof TABLES)[0] | null>(null)
+  const [activeTable,  setActiveTable]  = useState<(typeof TABLES)[0] | null>(null)
+  const [fetchLoading, setFetchLoading] = useState(false)
 
   const fetchStatuses = useCallback(async () => {
     if (!date || !timeStart || !timeEnd) return
+    setFetchLoading(true)
     try {
       const qs  = new URLSearchParams({ date, timeStart, timeEnd })
       const res = await api.get(`/tables?${qs}`)
@@ -81,6 +83,7 @@ export default function AdminMap() {
         return next
       })
     } catch { /* keep */ }
+    finally { setFetchLoading(false) }
   }, [date, timeStart, timeEnd])
 
   useEffect(() => { fetchStatuses() }, [fetchStatuses])
@@ -191,7 +194,7 @@ export default function AdminMap() {
 
       <div className="adm-map-page">
         {/* Фильтры */}
-        <div className="adm-map-filters">
+        <div className="adm-map-filters" style={{ position: 'relative' }}>
           <label className="adm-map-filter">
             <span>Дата</span>
             <input type="date" value={date} min={todayStr()} onChange={(e) => setDate(e.target.value)} />
@@ -204,6 +207,7 @@ export default function AdminMap() {
             <span>Время по</span>
             <input type="time" value={timeEnd} onChange={(e) => setTimeEnd(e.target.value)} />
           </label>
+          {fetchLoading && <span className="adm-map-loading">Обновление…</span>}
         </div>
 
         {/* Действия */}
@@ -223,7 +227,9 @@ export default function AdminMap() {
 
         {/* Карта */}
         <div className="adm-map-wrap">
-          <svg className="adm-svg" viewBox="0 0 990 905" xmlns="http://www.w3.org/2000/svg">
+          <svg className="adm-svg" viewBox="0 0 990 905" xmlns="http://www.w3.org/2000/svg"
+            style={{ opacity: fetchLoading ? 0.5 : 1, transition: 'opacity 0.2s' }}
+          >
             {/* ── VIP комната ── */}
             <rect className="bm-room bm-room--vip" x="520" y="28"  width="300" height="272" rx="6" />
             <text className="bm-vip-badge" x="592" y="68">VIP</text>

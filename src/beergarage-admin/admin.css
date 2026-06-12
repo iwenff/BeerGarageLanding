@@ -440,6 +440,17 @@
   align-self: center;
 }
 
+.adm-map-loading {
+  font-size: 12px;
+  color: #f4a52e;
+  align-self: center;
+  animation: adm-pulse 1s ease-in-out infinite;
+}
+@keyframes adm-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+
 /* Map container */
 .adm-map-wrap {
   background: rgba(255,255,255,0.02);
