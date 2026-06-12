@@ -2,7 +2,7 @@ import { useState, FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import '../admin.css'
 
-const API_URL = 'https://beergarage-back-production.up.railway.app'
+const API_URL = import.meta.env.VITE_API_URL as string
 
 export default function AdminLogin() {
   const [login, setLogin]       = useState('')
