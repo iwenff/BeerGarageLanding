@@ -372,6 +372,16 @@
   letter-spacing: 0.06em;
   font-size: 14px;
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bm-success__hint {
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: rgba(74, 222, 128, 0.65);
+  text-transform: none;
 }
 
 /* ── Форма ── */
